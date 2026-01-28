@@ -1,0 +1,1395 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description"
+    content="Artificial Heart Prototype Testing Dashboard - Real-time sensor monitoring and pump control">
+  <title>ArtHeart Testing Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    /* ============================================================
+       DESIGN TOKENS - SINGLE SOURCE OF TRUTH
+       ============================================================ */
+    :root {
+      /* PRIMARY COLORS - Medical Grade */
+      --color-navy: #1a2332;
+      --color-teal: #0d8b94;
+      --color-teal-dark: #0a7d87;
+      --color-gray: #4a5568;
+
+      /* ACCENT COLORS - Physiological Signals */
+      --color-success: #10b981;
+      --color-warning: #f97316;
+      --color-critical: #dc2626;
+      --color-critical-dark: #991b1b;
+      --color-info: #6b7280;
+
+      /* NEUTRALS - Text & Structure */
+      --color-text-primary: #f3f4f6;
+      --color-text-secondary: #d1d5db;
+      --color-text-muted: #9ca3af;
+      --color-border: #374151;
+      --color-bg-light: #1f2937;
+      --color-bg-dark: #111827;
+      --color-surface: #1f2937;
+
+      /* TYPOGRAPHY */
+      --font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      --font-mono: "SF Mono", Monaco, "Fira Code", Consolas, monospace;
+      --font-size-xs: 12px;
+      --font-size-sm: 14px;
+      --font-size-base: 16px;
+      --font-size-lg: 18px;
+      --font-size-xl: 24px;
+      --font-size-2xl: 32px;
+      --font-weight-normal: 400;
+      --font-weight-medium: 500;
+      --font-weight-semibold: 600;
+      --font-weight-bold: 700;
+      --line-height: 1.5;
+
+      /* SPACING GRID - 8px Base */
+      --space-xs: 4px;
+      --space-sm: 8px;
+      --space-md: 16px;
+      --space-lg: 24px;
+      --space-xl: 32px;
+
+      /* BORDER & RADIUS */
+      --radius: 8px;
+      --radius-lg: 12px;
+      --border: 1px solid var(--color-border);
+
+      /* SHADOWS */
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
+
+      /* TRANSITIONS */
+      --transition: all 200ms ease-in-out;
+    }
+
+    /* ============================================================
+       RESET & BASE
+       ============================================================ */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      font-size: 16px;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: var(--font-family);
+      background: var(--color-navy);
+      color: var(--color-text-primary);
+      line-height: var(--line-height);
+      min-height: 100vh;
+    }
+
+    /* Skip Link for Accessibility */
+    .skip-link {
+      position: absolute;
+      top: -100px;
+      left: var(--space-md);
+      background: var(--color-teal);
+      color: white;
+      padding: var(--space-sm) var(--space-md);
+      border-radius: var(--radius);
+      z-index: 1000;
+      text-decoration: none;
+    }
+
+    .skip-link:focus {
+      top: var(--space-md);
+    }
+
+    /* ============================================================
+       DASHBOARD CONTAINER
+       ============================================================ */
+    .dashboard {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: var(--space-lg);
+      min-height: 100vh;
+    }
+
+    /* ============================================================
+       HEADER
+       ============================================================ */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-lg);
+      padding-bottom: var(--space-md);
+      border-bottom: var(--border);
+    }
+
+    .header-left {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+    }
+
+    .header-title {
+      font-size: var(--font-size-xl);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-text-primary);
+      margin: 0;
+    }
+
+    .header-subtitle {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-secondary);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: var(--space-lg);
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      padding: var(--space-sm) var(--space-md);
+      background: var(--color-surface);
+      border: var(--border);
+      border-radius: var(--radius);
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--color-success);
+      animation: pulse 2s infinite;
+    }
+
+    .status-dot.warning {
+      background: var(--color-warning);
+    }
+
+    .status-dot.critical {
+      background: var(--color-critical);
+      animation: blink 0.5s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.5;
+      }
+    }
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.3;
+      }
+    }
+
+    .status-text {
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text-primary);
+    }
+
+    /* ============================================================
+       KPI METRICS - 4 CARDS
+       ============================================================ */
+    .kpi-metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-md);
+      margin-bottom: var(--space-lg);
+    }
+
+    .kpi-card {
+      background: var(--color-surface);
+      border: var(--border);
+      border-left: 4px solid var(--color-teal);
+      border-radius: var(--radius);
+      padding: var(--space-md);
+      transition: var(--transition);
+    }
+
+    .kpi-card:hover {
+      border-left-color: var(--color-teal);
+      box-shadow: var(--shadow-md);
+    }
+
+    .kpi-card.warning {
+      border-left-color: var(--color-warning);
+    }
+
+    .kpi-card.critical {
+      border-left-color: var(--color-critical);
+    }
+
+    .kpi-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-sm);
+    }
+
+    .kpi-label {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-secondary);
+      font-weight: var(--font-weight-medium);
+    }
+
+    .kpi-status {
+      font-size: var(--font-size-xs);
+      padding: 2px 8px;
+      border-radius: var(--radius);
+      font-weight: var(--font-weight-semibold);
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--color-success);
+    }
+
+    .kpi-status.warning {
+      background: rgba(249, 115, 22, 0.2);
+      color: var(--color-warning);
+    }
+
+    .kpi-status.critical {
+      background: rgba(220, 38, 38, 0.2);
+      color: var(--color-critical);
+    }
+
+    .kpi-value {
+      font-size: var(--font-size-2xl);
+      font-weight: var(--font-weight-bold);
+      font-family: var(--font-mono);
+      color: var(--color-text-primary);
+      line-height: 1;
+      margin-bottom: var(--space-xs);
+    }
+
+    .kpi-unit {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-muted);
+    }
+
+    /* ============================================================
+       CONTROL SECTION
+       ============================================================ */
+    .control-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-md);
+      margin-bottom: var(--space-lg);
+    }
+
+    .pump-control {
+      background: var(--color-surface);
+      border: var(--border);
+      border-radius: var(--radius);
+      padding: var(--space-md);
+    }
+
+    .pump-title {
+      font-size: var(--font-size-base);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-md);
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    .pump-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--color-info);
+    }
+
+    .pump-indicator.running {
+      background: var(--color-success);
+    }
+
+    .pump-buttons {
+      display: flex;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-md);
+    }
+
+    .btn {
+      padding: 10px 16px;
+      border-radius: var(--radius);
+      border: none;
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      cursor: pointer;
+      transition: var(--transition);
+      min-width: 44px;
+      min-height: 44px;
+    }
+
+    .btn:focus {
+      outline: 2px solid var(--color-teal);
+      outline-offset: 2px;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--color-teal);
+      color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--color-teal-dark);
+    }
+
+    .btn-danger {
+      background: var(--color-critical);
+      color: white;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background: var(--color-critical-dark);
+    }
+
+    .btn-secondary {
+      background: var(--color-bg-light);
+      color: var(--color-text-primary);
+      border: var(--border);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: var(--color-gray);
+    }
+
+    .speed-control {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+    }
+
+    .speed-label {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-secondary);
+      min-width: 50px;
+    }
+
+    .slider {
+      flex: 1;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 8px;
+      background: var(--color-bg-dark);
+      border-radius: 4px;
+      outline: none;
+    }
+
+    .slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      background: var(--color-teal);
+      border-radius: 50%;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .slider::-webkit-slider-thumb:hover {
+      transform: scale(1.1);
+    }
+
+    .slider:focus {
+      outline: 2px solid var(--color-teal);
+      outline-offset: 2px;
+    }
+
+    .speed-value {
+      font-family: var(--font-mono);
+      font-size: var(--font-size-base);
+      font-weight: var(--font-weight-semibold);
+      min-width: 80px;
+      text-align: right;
+    }
+
+    .pump-status {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-muted);
+      margin-top: var(--space-sm);
+    }
+
+    /* Emergency Stop */
+    .emergency-section {
+      grid-column: span 2;
+      display: flex;
+      justify-content: center;
+      padding: var(--space-md);
+    }
+
+    .btn-emergency {
+      padding: var(--space-md) var(--space-xl);
+      background: linear-gradient(135deg, var(--color-critical), var(--color-critical-dark));
+      color: white;
+      font-size: var(--font-size-lg);
+      font-weight: var(--font-weight-bold);
+      letter-spacing: 1px;
+      border: 2px solid var(--color-critical);
+      border-radius: var(--radius);
+    }
+
+    .btn-emergency:hover {
+      box-shadow: 0 0 20px rgba(220, 38, 38, 0.5);
+      transform: scale(1.02);
+    }
+
+    /* ============================================================
+       CHARTS - 2x2 GRID
+       ============================================================ */
+    .charts-section {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--space-md);
+      margin-bottom: var(--space-lg);
+    }
+
+    .chart-container {
+      background: var(--color-surface);
+      border: var(--border);
+      border-radius: var(--radius);
+      padding: var(--space-md);
+      min-height: 300px;
+    }
+
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-md);
+    }
+
+    .chart-title {
+      font-size: var(--font-size-base);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+    }
+
+    .chart-time-buttons {
+      display: flex;
+      gap: var(--space-xs);
+    }
+
+    .time-btn {
+      padding: 4px 8px;
+      font-size: var(--font-size-xs);
+      background: var(--color-bg-dark);
+      color: var(--color-text-secondary);
+      border: var(--border);
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .time-btn:hover,
+    .time-btn.active {
+      background: var(--color-teal);
+      color: white;
+      border-color: var(--color-teal);
+    }
+
+    .chart-canvas {
+      width: 100%;
+      height: 220px;
+    }
+
+    /* ============================================================
+       DATA TABLE
+       ============================================================ */
+    .data-section {
+      background: var(--color-surface);
+      border: var(--border);
+      border-radius: var(--radius);
+      padding: var(--space-md);
+      margin-bottom: var(--space-lg);
+    }
+
+    .data-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-md);
+    }
+
+    .data-title {
+      font-size: var(--font-size-base);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+    }
+
+    .table-container {
+      overflow-x: auto;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--font-size-sm);
+    }
+
+    th {
+      background: var(--color-bg-dark);
+      color: var(--color-text-primary);
+      font-weight: var(--font-weight-semibold);
+      padding: var(--space-sm) var(--space-md);
+      text-align: left;
+      border-bottom: var(--border);
+      position: sticky;
+      top: 0;
+    }
+
+    td {
+      padding: var(--space-sm) var(--space-md);
+      border-bottom: 1px solid var(--color-border);
+      font-family: var(--font-mono);
+    }
+
+    tr:nth-child(even) {
+      background: var(--color-bg-dark);
+    }
+
+    tr:hover {
+      background: rgba(13, 139, 148, 0.1);
+    }
+
+    .sensor-temp {
+      color: var(--color-warning);
+    }
+
+    .sensor-pressure {
+      color: var(--color-critical);
+    }
+
+    .sensor-flow {
+      color: var(--color-teal);
+    }
+
+    .sensor-rpm {
+      color: var(--color-success);
+    }
+
+    /* ============================================================
+       FOOTER
+       ============================================================ */
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: var(--space-md);
+      border-top: var(--border);
+    }
+
+    .footer-left {
+      display: flex;
+      gap: var(--space-sm);
+    }
+
+    .footer-right {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-muted);
+    }
+
+    /* ============================================================
+       ALERT POPUP
+       ============================================================ */
+    .alert-container {
+      position: fixed;
+      top: var(--space-lg);
+      right: var(--space-lg);
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-sm);
+    }
+
+    .alert {
+      background: var(--color-surface);
+      border: var(--border);
+      border-left: 4px solid var(--color-warning);
+      border-radius: var(--radius);
+      padding: var(--space-md);
+      min-width: 300px;
+      box-shadow: var(--shadow-md);
+      animation: slideIn 0.3s ease-out;
+    }
+
+    .alert.critical {
+      border-left-color: var(--color-critical);
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    .alert-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-xs);
+    }
+
+    .alert-title {
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-warning);
+    }
+
+    .alert.critical .alert-title {
+      color: var(--color-critical);
+    }
+
+    .alert-close {
+      background: none;
+      border: none;
+      color: var(--color-text-muted);
+      cursor: pointer;
+      font-size: var(--font-size-lg);
+    }
+
+    .alert-message {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-secondary);
+    }
+
+    /* ============================================================
+       RESPONSIVE DESIGN
+       ============================================================ */
+    @media (max-width: 1024px) {
+      .kpi-metrics {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .charts-section {
+        grid-template-columns: 1fr;
+      }
+
+      .control-section {
+        grid-template-columns: 1fr;
+      }
+
+      .emergency-section {
+        grid-column: span 1;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .dashboard {
+        padding: var(--space-md);
+      }
+
+      .kpi-metrics {
+        grid-template-columns: 1fr;
+      }
+
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-md);
+      }
+
+      .header-right {
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .footer {
+        flex-direction: column;
+        gap: var(--space-md);
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <div class="dashboard">
+    <!-- HEADER -->
+    <header class="header">
+      <div class="header-left">
+        <h1 class="header-title">ArtHeart Testing Dashboard</h1>
+        <p class="header-subtitle">Artificial Heart Prototype Monitoring System</p>
+      </div>
+      <div class="header-right">
+        <div class="status-indicator" role="status" aria-live="polite">
+          <span class="status-dot" id="statusDot"></span>
+          <span class="status-text" id="statusText">Live</span>
+        </div>
+      </div>
+    </header>
+
+    <main id="main-content">
+      <!-- KPI METRICS -->
+      <section class="kpi-metrics" aria-label="Key Performance Indicators">
+        <div class="kpi-card" id="kpi-temp" data-sensor="temperature">
+          <div class="kpi-header">
+            <span class="kpi-label">Temperature</span>
+            <span class="kpi-status" id="status-temp">OK</span>
+          </div>
+          <div class="kpi-value" id="value-temp" aria-label="Temperature value">--</div>
+          <div class="kpi-unit">°C</div>
+        </div>
+
+        <div class="kpi-card" id="kpi-pressure" data-sensor="pressure">
+          <div class="kpi-header">
+            <span class="kpi-label">Pressure</span>
+            <span class="kpi-status" id="status-pressure">OK</span>
+          </div>
+          <div class="kpi-value" id="value-pressure" aria-label="Pressure value">--</div>
+          <div class="kpi-unit">mmHg</div>
+        </div>
+
+        <div class="kpi-card" id="kpi-flow" data-sensor="flow_rate">
+          <div class="kpi-header">
+            <span class="kpi-label">Flow Rate</span>
+            <span class="kpi-status" id="status-flow">OK</span>
+          </div>
+          <div class="kpi-value" id="value-flow" aria-label="Flow rate value">--</div>
+          <div class="kpi-unit">L/min</div>
+        </div>
+
+        <div class="kpi-card" id="kpi-rpm" data-sensor="motor_speed">
+          <div class="kpi-header">
+            <span class="kpi-label">Pump RPM</span>
+            <span class="kpi-status" id="status-rpm">OK</span>
+          </div>
+          <div class="kpi-value" id="value-rpm" aria-label="RPM value">--</div>
+          <div class="kpi-unit">RPM</div>
+        </div>
+      </section>
+
+      <!-- CONTROL SECTION -->
+      <section class="control-section" aria-label="Pump Controls">
+        <div class="pump-control">
+          <h2 class="pump-title">
+            <span class="pump-indicator" id="pump-left-indicator"></span>
+            Left Pump Control
+          </h2>
+          <div class="pump-buttons">
+            <button class="btn btn-primary" id="btn-start-left" aria-label="Start left pump">
+              ▶ Start
+            </button>
+            <button class="btn btn-danger" id="btn-stop-left" aria-label="Stop left pump">
+              ◼ Stop
+            </button>
+          </div>
+          <div class="speed-control">
+            <span class="speed-label">Speed:</span>
+            <input type="range" class="slider" id="speed-left" min="0" max="4000" value="0"
+              aria-label="Left pump speed">
+            <span class="speed-value" id="speed-left-value">0 RPM</span>
+          </div>
+          <p class="pump-status" id="pump-left-status">Status: Stopped</p>
+        </div>
+
+        <div class="pump-control">
+          <h2 class="pump-title">
+            <span class="pump-indicator" id="pump-right-indicator"></span>
+            Right Pump Control
+          </h2>
+          <div class="pump-buttons">
+            <button class="btn btn-primary" id="btn-start-right" aria-label="Start right pump">
+              ▶ Start
+            </button>
+            <button class="btn btn-danger" id="btn-stop-right" aria-label="Stop right pump">
+              ◼ Stop
+            </button>
+          </div>
+          <div class="speed-control">
+            <span class="speed-label">Speed:</span>
+            <input type="range" class="slider" id="speed-right" min="0" max="4000" value="0"
+              aria-label="Right pump speed">
+            <span class="speed-value" id="speed-right-value">0 RPM</span>
+          </div>
+          <p class="pump-status" id="pump-right-status">Status: Stopped</p>
+        </div>
+
+        <div class="emergency-section">
+          <button class="btn btn-emergency" id="btn-emergency" aria-label="Emergency stop all pumps">
+            ⚠ EMERGENCY STOP
+          </button>
+        </div>
+      </section>
+
+      <!-- CHARTS -->
+      <section class="charts-section" aria-label="Real-time Charts">
+        <div class="chart-container">
+          <div class="chart-header">
+            <h3 class="chart-title">Pressure (mmHg)</h3>
+            <div class="chart-time-buttons">
+              <button class="time-btn active" data-range="1m">1m</button>
+              <button class="time-btn" data-range="5m">5m</button>
+              <button class="time-btn" data-range="1h">1h</button>
+            </div>
+          </div>
+          <canvas id="chart-pressure" class="chart-canvas" aria-label="Pressure chart"></canvas>
+        </div>
+
+        <div class="chart-container">
+          <div class="chart-header">
+            <h3 class="chart-title">Temperature (°C)</h3>
+            <div class="chart-time-buttons">
+              <button class="time-btn active" data-range="1m">1m</button>
+              <button class="time-btn" data-range="5m">5m</button>
+              <button class="time-btn" data-range="1h">1h</button>
+            </div>
+          </div>
+          <canvas id="chart-temp" class="chart-canvas" aria-label="Temperature chart"></canvas>
+        </div>
+
+        <div class="chart-container">
+          <div class="chart-header">
+            <h3 class="chart-title">Flow Rate (L/min)</h3>
+            <div class="chart-time-buttons">
+              <button class="time-btn active" data-range="1m">1m</button>
+              <button class="time-btn" data-range="5m">5m</button>
+              <button class="time-btn" data-range="1h">1h</button>
+            </div>
+          </div>
+          <canvas id="chart-flow" class="chart-canvas" aria-label="Flow rate chart"></canvas>
+        </div>
+
+        <div class="chart-container">
+          <div class="chart-header">
+            <h3 class="chart-title">Pump RPM</h3>
+            <div class="chart-time-buttons">
+              <button class="time-btn active" data-range="1m">1m</button>
+              <button class="time-btn" data-range="5m">5m</button>
+              <button class="time-btn" data-range="1h">1h</button>
+            </div>
+          </div>
+          <canvas id="chart-rpm" class="chart-canvas" aria-label="RPM chart"></canvas>
+        </div>
+      </section>
+
+      <!-- DATA TABLE -->
+      <section class="data-section" aria-label="Sensor Data Log">
+        <div class="data-header">
+          <h3 class="data-title">Sensor Data Log</h3>
+          <div>
+            <button class="btn btn-secondary" id="btn-clear-log">Clear</button>
+          </div>
+        </div>
+        <div class="table-container">
+          <table id="data-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Sensor</th>
+                <th>Value</th>
+                <th>Unit</th>
+                <th>State</th>
+              </tr>
+            </thead>
+            <tbody id="table-body">
+              <!-- Data rows populated by JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      <div class="footer-left">
+        <button class="btn btn-secondary" id="btn-export">📥 Export CSV</button>
+      </div>
+      <div class="footer-right">
+        Last Updated: <span id="last-updated">--:--:--</span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ALERT CONTAINER -->
+  <div class="alert-container" id="alert-container" aria-live="assertive"></div>
+
+  <script>
+    // ============================================================
+    // REALISTIC DATA SIMULATOR
+    // ============================================================
+    class RealisticSimulator {
+      constructor() {
+        this.baseTemp = 37.0;
+        this.basePressureSystolic = 120;
+        this.basePressureDiastolic = 80;
+        this.baseFlow = 4.5;
+        this.pumpLeftRPM = 0;
+        this.pumpRightRPM = 0;
+        this.pumpLeftRunning = false;
+        this.pumpRightRunning = false;
+        this.startTime = Date.now();
+      }
+
+      // Temperature: Gradual drift with micro-variations
+      getTemperature() {
+        const elapsed = (Date.now() - this.startTime) / 1000;
+        const drift = Math.sin(elapsed / 60) * 0.3;
+        const variation = Math.random() * 0.1 - 0.05;
+        const pumpHeat = ((this.pumpLeftRPM + this.pumpRightRPM) / 8000) * 1.5;
+        return this.baseTemp + drift + variation + pumpHeat;
+      }
+
+      // Pressure: Pulsatile curve (systolic/diastolic)
+      getPressure() {
+        if (!this.pumpLeftRunning && !this.pumpRightRunning) {
+          return this.basePressureDiastolic + Math.random() * 5;
+        }
+        const beat = (Date.now() % 1000) / 1000;
+        const amplitude = this.basePressureSystolic - this.basePressureDiastolic;
+        const cyclePosition = beat;
+
+        let pressure;
+        if (cyclePosition < 0.3) {
+          const systolicProgress = cyclePosition / 0.3;
+          pressure = this.basePressureDiastolic + amplitude * Math.sin(systolicProgress * Math.PI);
+        } else {
+          const diastolicProgress = (cyclePosition - 0.3) / 0.7;
+          pressure = this.basePressureDiastolic + amplitude * 0.2 * Math.exp(-diastolicProgress * 3);
+        }
+        return pressure + (Math.random() - 0.5) * 5;
+      }
+
+      // Flow Rate: Correlated with pump RPM
+      getFlowRate() {
+        const avgRPM = (this.pumpLeftRPM + this.pumpRightRPM) / 2;
+        if (avgRPM === 0) return 0;
+        const correlation = (avgRPM / 4000) * 3;
+        const baseFlow = this.baseFlow + correlation;
+        const variation = Math.random() * 0.5 - 0.25;
+        return Math.max(0, Math.min(8, baseFlow + variation));
+      }
+
+      // Get combined RPM
+      getRPM() {
+        return Math.round((this.pumpLeftRPM + this.pumpRightRPM) / 2);
+      }
+
+      setPumpState(pump, running, rpm = 0) {
+        if (pump === 'left') {
+          this.pumpLeftRunning = running;
+          this.pumpLeftRPM = running ? rpm : 0;
+        } else {
+          this.pumpRightRunning = running;
+          this.pumpRightRPM = running ? rpm : 0;
+        }
+      }
+
+      getAllData() {
+        return {
+          timestamp: new Date().toLocaleTimeString(),
+          temperature: this.getTemperature().toFixed(1),
+          pressure: Math.round(this.getPressure()),
+          flowRate: this.getFlowRate().toFixed(2),
+          rpm: this.getRPM()
+        };
+      }
+    }
+
+    // ============================================================
+    // THRESHOLDS FOR ALERTS
+    // ============================================================
+    const THRESHOLDS = {
+      temperature: { warning: 38.5, critical: 40.0 },
+      pressure: { warningHigh: 150, criticalHigh: 180, warningLow: 60 },
+      flowRate: { warningLow: 2.0, criticalLow: 1.0 }
+    };
+
+    // ============================================================
+    // CHART SETUP
+    // ============================================================
+    const chartConfig = {
+      type: 'line',
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 0 },
+        scales: {
+          x: {
+            display: true,
+            grid: { color: 'rgba(255,255,255,0.1)' },
+            ticks: { color: '#9ca3af', maxTicksLimit: 6 }
+          },
+          y: {
+            display: true,
+            grid: { color: 'rgba(255,255,255,0.1)' },
+            ticks: { color: '#9ca3af' }
+          }
+        },
+        plugins: {
+          legend: { display: false }
+        }
+      }
+    };
+
+    const charts = {};
+    const chartData = {
+      pressure: { labels: [], data: [] },
+      temp: { labels: [], data: [] },
+      flow: { labels: [], data: [] },
+      rpm: { labels: [], data: [] }
+    };
+    const MAX_DATA_POINTS = 60;
+
+    function initCharts() {
+      const chartConfigs = {
+        pressure: { color: '#dc2626', label: 'Pressure' },
+        temp: { color: '#f97316', label: 'Temperature' },
+        flow: { color: '#0d8b94', label: 'Flow Rate' },
+        rpm: { color: '#10b981', label: 'RPM' }
+      };
+
+      Object.keys(chartConfigs).forEach(key => {
+        const ctx = document.getElementById(`chart-${key}`).getContext('2d');
+        charts[key] = new Chart(ctx, {
+          ...chartConfig,
+          data: {
+            labels: [],
+            datasets: [{
+              label: chartConfigs[key].label,
+              data: [],
+              borderColor: chartConfigs[key].color,
+              backgroundColor: chartConfigs[key].color + '20',
+              borderWidth: 2,
+              fill: true,
+              tension: 0.4,
+              pointRadius: 0
+            }]
+          }
+        });
+      });
+    }
+
+    function updateCharts(data) {
+      const time = data.timestamp;
+
+      Object.keys(chartData).forEach(key => {
+        const value = key === 'temp' ? parseFloat(data.temperature) :
+          key === 'pressure' ? data.pressure :
+            key === 'flow' ? parseFloat(data.flowRate) :
+              data.rpm;
+
+        chartData[key].labels.push(time);
+        chartData[key].data.push(value);
+
+        if (chartData[key].labels.length > MAX_DATA_POINTS) {
+          chartData[key].labels.shift();
+          chartData[key].data.shift();
+        }
+
+        charts[key].data.labels = chartData[key].labels;
+        charts[key].data.datasets[0].data = chartData[key].data;
+        charts[key].update('none');
+      });
+    }
+
+    // ============================================================
+    // KPI UPDATES
+    // ============================================================
+    function updateKPIs(data) {
+      // Temperature
+      document.getElementById('value-temp').textContent = data.temperature;
+      updateKPIStatus('temp', parseFloat(data.temperature),
+        THRESHOLDS.temperature.warning, THRESHOLDS.temperature.critical);
+
+      // Pressure
+      document.getElementById('value-pressure').textContent = data.pressure;
+      updateKPIStatus('pressure', data.pressure,
+        THRESHOLDS.pressure.warningHigh, THRESHOLDS.pressure.criticalHigh);
+
+      // Flow Rate
+      document.getElementById('value-flow').textContent = data.flowRate;
+      const flowVal = parseFloat(data.flowRate);
+      if (flowVal > 0 && flowVal < THRESHOLDS.flowRate.criticalLow) {
+        setKPIStatus('flow', 'critical');
+      } else if (flowVal > 0 && flowVal < THRESHOLDS.flowRate.warningLow) {
+        setKPIStatus('flow', 'warning');
+      } else {
+        setKPIStatus('flow', 'ok');
+      }
+
+      // RPM
+      document.getElementById('value-rpm').textContent = data.rpm;
+      setKPIStatus('rpm', 'ok');
+
+      // Update last updated time
+      document.getElementById('last-updated').textContent = data.timestamp;
+    }
+
+    function updateKPIStatus(sensor, value, warningThreshold, criticalThreshold) {
+      if (value >= criticalThreshold) {
+        setKPIStatus(sensor, 'critical');
+        showAlert(sensor, value, 'critical');
+      } else if (value >= warningThreshold) {
+        setKPIStatus(sensor, 'warning');
+        showAlert(sensor, value, 'warning');
+      } else {
+        setKPIStatus(sensor, 'ok');
+      }
+    }
+
+    function setKPIStatus(sensor, status) {
+      const card = document.getElementById(`kpi-${sensor}`);
+      const statusEl = document.getElementById(`status-${sensor}`);
+
+      card.classList.remove('warning', 'critical');
+      statusEl.classList.remove('warning', 'critical');
+
+      if (status === 'warning') {
+        card.classList.add('warning');
+        statusEl.classList.add('warning');
+        statusEl.textContent = 'WARNING';
+      } else if (status === 'critical') {
+        card.classList.add('critical');
+        statusEl.classList.add('critical');
+        statusEl.textContent = 'CRITICAL';
+      } else {
+        statusEl.textContent = 'OK';
+      }
+    }
+
+    // ============================================================
+    // ALERTS
+    // ============================================================
+    let activeAlerts = new Set();
+
+    function showAlert(sensor, value, level) {
+      const key = `${sensor}-${level}`;
+      if (activeAlerts.has(key)) return;
+
+      activeAlerts.add(key);
+
+      const container = document.getElementById('alert-container');
+      const alert = document.createElement('div');
+      alert.className = `alert ${level}`;
+      alert.innerHTML = `
+        <div class="alert-header">
+          <span class="alert-title">${level.toUpperCase()}: ${sensor.charAt(0).toUpperCase() + sensor.slice(1)}</span>
+          <button class="alert-close" aria-label="Dismiss alert">&times;</button>
+        </div>
+        <p class="alert-message">Value: ${value} - Threshold exceeded!</p>
+      `;
+
+      const closeBtn = alert.querySelector('.alert-close');
+      closeBtn.addEventListener('click', () => {
+        alert.remove();
+        activeAlerts.delete(key);
+      });
+
+      container.appendChild(alert);
+
+      // Auto-dismiss after 10 seconds
+      setTimeout(() => {
+        if (alert.parentNode) {
+          alert.remove();
+          activeAlerts.delete(key);
+        }
+      }, 10000);
+    }
+
+    // ============================================================
+    // DATA TABLE
+    // ============================================================
+    const tableData = [];
+    const MAX_TABLE_ROWS = 50;
+
+    function addTableRow(data) {
+      const row = {
+        timestamp: data.timestamp,
+        sensors: [
+          { name: 'Temperature', value: data.temperature, unit: '°C', class: 'sensor-temp' },
+          { name: 'Pressure', value: data.pressure, unit: 'mmHg', class: 'sensor-pressure' },
+          { name: 'Flow Rate', value: data.flowRate, unit: 'L/min', class: 'sensor-flow' },
+          { name: 'RPM', value: data.rpm, unit: 'RPM', class: 'sensor-rpm' }
+        ],
+        state: simulator.pumpLeftRunning || simulator.pumpRightRunning ? 'Running' : 'Stopped'
+      };
+
+      tableData.unshift(row);
+      if (tableData.length > MAX_TABLE_ROWS) tableData.pop();
+
+      renderTable();
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('table-body');
+      tbody.innerHTML = tableData.slice(0, 10).map(row =>
+        row.sensors.map(s => `
+          <tr>
+            <td>${row.timestamp}</td>
+            <td class="${s.class}">${s.name}</td>
+            <td>${s.value}</td>
+            <td>${s.unit}</td>
+            <td>${row.state}</td>
+          </tr>
+        `).join('')
+      ).join('');
+    }
+
+    // ============================================================
+    // PUMP CONTROLS
+    // ============================================================
+    function setupControls() {
+      // Left Pump
+      document.getElementById('btn-start-left').addEventListener('click', () => {
+        const speed = parseInt(document.getElementById('speed-left').value) || 2000;
+        simulator.setPumpState('left', true, speed);
+        updatePumpUI('left', true, speed);
+      });
+
+      document.getElementById('btn-stop-left').addEventListener('click', () => {
+        simulator.setPumpState('left', false);
+        updatePumpUI('left', false, 0);
+      });
+
+      document.getElementById('speed-left').addEventListener('input', (e) => {
+        const speed = parseInt(e.target.value);
+        document.getElementById('speed-left-value').textContent = `${speed} RPM`;
+        if (simulator.pumpLeftRunning) {
+          simulator.pumpLeftRPM = speed;
+        }
+      });
+
+      // Right Pump
+      document.getElementById('btn-start-right').addEventListener('click', () => {
+        const speed = parseInt(document.getElementById('speed-right').value) || 2000;
+        simulator.setPumpState('right', true, speed);
+        updatePumpUI('right', true, speed);
+      });
+
+      document.getElementById('btn-stop-right').addEventListener('click', () => {
+        simulator.setPumpState('right', false);
+        updatePumpUI('right', false, 0);
+      });
+
+      document.getElementById('speed-right').addEventListener('input', (e) => {
+        const speed = parseInt(e.target.value);
+        document.getElementById('speed-right-value').textContent = `${speed} RPM`;
+        if (simulator.pumpRightRunning) {
+          simulator.pumpRightRPM = speed;
+        }
+      });
+
+      // Emergency Stop
+      document.getElementById('btn-emergency').addEventListener('click', () => {
+        simulator.setPumpState('left', false);
+        simulator.setPumpState('right', false);
+        updatePumpUI('left', false, 0);
+        updatePumpUI('right', false, 0);
+        document.getElementById('speed-left').value = 0;
+        document.getElementById('speed-right').value = 0;
+        document.getElementById('speed-left-value').textContent = '0 RPM';
+        document.getElementById('speed-right-value').textContent = '0 RPM';
+        showAlert('system', 'All pumps', 'critical');
+      });
+
+      // Export CSV
+      document.getElementById('btn-export').addEventListener('click', exportCSV);
+
+      // Clear Log
+      document.getElementById('btn-clear-log').addEventListener('click', () => {
+        tableData.length = 0;
+        renderTable();
+      });
+    }
+
+    function updatePumpUI(pump, running, speed) {
+      const indicator = document.getElementById(`pump-${pump}-indicator`);
+      const status = document.getElementById(`pump-${pump}-status`);
+
+      if (running) {
+        indicator.classList.add('running');
+        status.textContent = `Status: Running at ${speed} RPM`;
+      } else {
+        indicator.classList.remove('running');
+        status.textContent = 'Status: Stopped';
+      }
+    }
+
+    // ============================================================
+    // CSV EXPORT
+    // ============================================================
+    function exportCSV() {
+      const headers = ['Timestamp', 'Sensor', 'Value', 'Unit', 'State'];
+      const rows = tableData.flatMap(row =>
+        row.sensors.map(s => [row.timestamp, s.name, s.value, s.unit, row.state])
+      );
+
+      const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `artheart-data-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+
+      URL.revokeObjectURL(url);
+    }
+
+    // ============================================================
+    // MAIN LOOP
+    // ============================================================
+    const simulator = new RealisticSimulator();
+
+    function updateDashboard() {
+      const data = simulator.getAllData();
+      updateKPIs(data);
+      updateCharts(data);
+      addTableRow(data);
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      initCharts();
+      setupControls();
+
+      // Start updates
+      setInterval(updateDashboard, 1000);
+      updateDashboard(); // Initial update
+    });
+  </script>
+</body>
+
+</html>
