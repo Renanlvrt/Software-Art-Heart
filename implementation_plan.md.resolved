@@ -1,0 +1,121 @@
+# Phase 2: CSV Data Integration + Visual Alerts
+
+## Goal
+Replace the simulator with real sensor data from a CSV file and add visual threshold alerts.
+
+---
+
+## Proposed Changes
+
+### Backend - CSV Reader
+
+#### [NEW] `backend/hardware/csv-reader.js`
+
+A new module that:
+- Watches a CSV file for new rows (using `chokidar` file watcher)
+- Parses each row into sensor reading format
+- Broadcasts readings via WebSocket (same interface as simulator)
+- Switches seamlessly based on `HARDWARE_MODE=csv` in [.env](file:///c:/Users/renan/Desktop/artHeart/software/backend/.env)
+
+**Expected CSV Format:**
+```csv
+timestamp,temperature,pressure,flow_rate,motor_speed,power
+2026-01-28T14:30:00Z,37.2,118,5.5,2800,42.1
+2026-01-28T14:30:01Z,37.3,82,5.4,2795,41.8
+```
+
+---
+
+#### [MODIFY] [backend/hardware/config.json](file:///c:/Users/renan/Desktop/artHeart/software/backend/hardware/config.json)
+
+Add CSV configuration:
+```json
+{
+  "csv": {
+    "file_path": "./data/sensor_readings.csv",
+    "watch_interval_ms": 500,
+    "columns": ["timestamp", "temperature", "pressure", "flow_rate", "motor_speed", "power"]
+  }
+}
+```
+
+---
+
+#### [MODIFY] [backend/server.js](file:///c:/Users/renan/Desktop/artHeart/software/backend/server.js)
+
+Add data source selection:
+```javascript
+if (process.env.HARDWARE_MODE === 'csv') {
+  const csvReader = require('./hardware/csv-reader');
+  csvReader.start(onReading);
+} else {
+  simulator.start(onReading);
+}
+```
+
+---
+
+### Backend - Alert System
+
+#### [NEW] `backend/services/alerts.js`
+
+Alert detection service:
+- Checks each reading against thresholds (already in [config.json](file:///c:/Users/renan/Desktop/artHeart/software/backend/hardware/config.json))
+- Emits `alert` WebSocket event when threshold exceeded
+- Tracks alert history
+
+---
+
+### Frontend - Visual Alerts
+
+#### [MODIFY] [frontend/public/js/socket-client.js](file:///c:/Users/renan/Desktop/artHeart/software/frontend/public/js/socket-client.js)
+
+Add alert event handler:
+```javascript
+socket.on('alert', (alert) => {
+  Dashboard.showAlert(alert);
+});
+```
+
+---
+
+#### [MODIFY] [frontend/public/js/dashboard.js](file:///c:/Users/renan/Desktop/artHeart/software/frontend/public/js/dashboard.js)
+
+Add alert popup and color states:
+- Gauge cards change border color: green → yellow → red
+- Alert popup with sensor name, value, and threshold
+- Optional: pulse animation for critical alerts
+
+---
+
+#### [NEW] `frontend/public/css/alerts.css`
+
+Alert popup styling with animations.
+
+---
+
+## Verification Plan
+
+### Automated Tests
+1. Create test CSV file with sample data
+2. Start server with `HARDWARE_MODE=csv`
+3. Verify readings appear on dashboard
+
+### Manual Verification
+1. Add a row to CSV file → should appear in real-time
+2. Add a value exceeding threshold → should trigger visual alert
+3. Verify alert popup displays correctly
+
+---
+
+## File Summary
+
+| File | Action | Purpose |
+|------|--------|---------|
+| `csv-reader.js` | NEW | Watch and parse CSV file |
+| `alerts.js` | NEW | Threshold detection & alerts |
+| [config.json](file:///c:/Users/renan/Desktop/artHeart/software/backend/hardware/config.json) | MODIFY | Add CSV config |
+| [server.js](file:///c:/Users/renan/Desktop/artHeart/software/backend/server.js) | MODIFY | Data source selection |
+| [socket-client.js](file:///c:/Users/renan/Desktop/artHeart/software/frontend/public/js/socket-client.js) | MODIFY | Handle alert events |
+| [dashboard.js](file:///c:/Users/renan/Desktop/artHeart/software/frontend/public/js/dashboard.js) | MODIFY | Alert popups & colors |
+| `alerts.css` | NEW | Alert styling |
