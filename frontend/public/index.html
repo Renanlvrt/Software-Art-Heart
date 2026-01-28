@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Artificial Heart Testing Platform - Real-time sensor monitoring and motor control">
+  <title>ArtHeart Testing Platform</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- Socket.io Client -->
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <div class="logo">
+          <img src="images/DU heart soc.jpeg" alt="DU Heart Society Logo" class="logo-icon">
+          <h1>ArtHeart</h1>
+        </div>
+        <span class="version">v1.0.0</span>
+      </div>
+      <div class="header-right">
+        <div class="connection-status" data-status="disconnected">
+          <span class="status-dot"></span>
+          <span class="status-text">Connecting...</span>
+        </div>
+        <div class="hardware-mode">
+          <span class="mode-label">Mode:</span>
+          <span class="mode-value" data-mode="simulator">Simulator</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Left Panel: Dashboard -->
+      <section class="panel dashboard-panel">
+        <h2 class="panel-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7" />
+            <rect x="14" y="3" width="7" height="7" />
+            <rect x="14" y="14" width="7" height="7" />
+            <rect x="3" y="14" width="7" height="7" />
+          </svg>
+          Dashboard
+        </h2>
+
+        <!-- Sensor Gauges -->
+        <div class="gauges-grid">
+          <!-- Temperature -->
+          <div class="gauge-card" data-sensor="temperature">
+            <div class="gauge-header">
+              <span class="gauge-label">Temperature</span>
+              <span class="gauge-status" data-status="ok">OK</span>
+            </div>
+            <div class="gauge-value">
+              <span class="value" data-value="temperature">--</span>
+              <span class="unit">°C</span>
+            </div>
+            <div class="gauge-bar">
+              <div class="gauge-fill" style="--fill: 0%"></div>
+            </div>
+            <div class="gauge-range">
+              <span>30</span>
+              <span>45</span>
+            </div>
+          </div>
+
+          <!-- Pressure -->
+          <div class="gauge-card" data-sensor="pressure">
+            <div class="gauge-header">
+              <span class="gauge-label">Pressure</span>
+              <span class="gauge-status" data-status="ok">OK</span>
+            </div>
+            <div class="gauge-value">
+              <span class="value" data-value="pressure">--</span>
+              <span class="unit">mmHg</span>
+            </div>
+            <div class="gauge-bar">
+              <div class="gauge-fill" style="--fill: 0%"></div>
+            </div>
+            <div class="gauge-range">
+              <span>50</span>
+              <span>150</span>
+            </div>
+          </div>
+
+          <!-- Flow Rate -->
+          <div class="gauge-card" data-sensor="flow_rate">
+            <div class="gauge-header">
+              <span class="gauge-label">Flow Rate</span>
+              <span class="gauge-status" data-status="ok">OK</span>
+            </div>
+            <div class="gauge-value">
+              <span class="value" data-value="flow_rate">--</span>
+              <span class="unit">L/min</span>
+            </div>
+            <div class="gauge-bar">
+              <div class="gauge-fill" style="--fill: 0%"></div>
+            </div>
+            <div class="gauge-range">
+              <span>0</span>
+              <span>10</span>
+            </div>
+          </div>
+
+          <!-- Motor Speed -->
+          <div class="gauge-card" data-sensor="motor_speed">
+            <div class="gauge-header">
+              <span class="gauge-label">Motor Speed</span>
+              <span class="gauge-status" data-status="ok">OK</span>
+            </div>
+            <div class="gauge-value">
+              <span class="value" data-value="motor_speed">--</span>
+              <span class="unit">RPM</span>
+            </div>
+            <div class="gauge-bar">
+              <div class="gauge-fill" style="--fill: 0%"></div>
+            </div>
+            <div class="gauge-range">
+              <span>0</span>
+              <span>3000</span>
+            </div>
+          </div>
+
+          <!-- Power -->
+          <div class="gauge-card" data-sensor="power">
+            <div class="gauge-header">
+              <span class="gauge-label">Power</span>
+              <span class="gauge-status" data-status="ok">OK</span>
+            </div>
+            <div class="gauge-value">
+              <span class="value" data-value="power">--</span>
+              <span class="unit">W</span>
+            </div>
+            <div class="gauge-bar">
+              <div class="gauge-fill" style="--fill: 0%"></div>
+            </div>
+            <div class="gauge-range">
+              <span>0</span>
+              <span>50</span>
+            </div>
+          </div>
+
+          <!-- Motor State -->
+          <div class="gauge-card motor-state-card" data-sensor="motor_state">
+            <div class="gauge-header">
+              <span class="gauge-label">Motor State</span>
+            </div>
+            <div class="motor-state" data-state="stopped">
+              <div class="state-indicator"></div>
+              <span class="state-text">STOPPED</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Center Panel: Graph -->
+      <section class="panel graph-panel">
+        <div class="panel-header">
+          <h2 class="panel-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="22,12 18,12 15,21 9,3 6,12 2,12" />
+            </svg>
+            Real-Time Graphs
+          </h2>
+          <div class="graph-controls">
+            <select id="graph-sensor" class="select-control">
+              <option value="temperature">Temperature</option>
+              <option value="pressure" selected>Pressure</option>
+              <option value="flow_rate">Flow Rate</option>
+              <option value="motor_speed">Motor Speed</option>
+              <option value="power">Power</option>
+            </select>
+            <select id="graph-timerange" class="select-control">
+              <option value="60">Last 1 min</option>
+              <option value="300" selected>Last 5 min</option>
+              <option value="900">Last 15 min</option>
+              <option value="3600">Last 1 hour</option>
+            </select>
+          </div>
+        </div>
+        <div class="chart-container">
+          <canvas id="sensor-chart"></canvas>
+        </div>
+      </section>
+
+      <!-- Right Panel: Controls -->
+      <section class="panel controls-panel">
+        <h2 class="panel-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3" />
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </svg>
+          Motor Controls
+        </h2>
+
+        <!-- Motor Control Buttons -->
+        <div class="control-group">
+          <div class="control-buttons">
+            <button class="btn btn-start" data-action="start" id="btn-start">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <polygon points="5,3 19,12 5,21" />
+              </svg>
+              Start Motor
+            </button>
+            <button class="btn btn-stop" data-action="stop" id="btn-stop">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <rect x="6" y="6" width="12" height="12" />
+              </svg>
+              Stop Motor
+            </button>
+          </div>
+        </div>
+
+        <!-- Speed Control -->
+        <div class="control-group">
+          <label class="control-label">Motor Speed</label>
+          <div class="speed-control">
+            <input type="range" id="speed-slider" min="0" max="100" value="50" class="slider">
+            <div class="speed-display">
+              <span id="speed-value">50</span>
+              <span>%</span>
+            </div>
+          </div>
+          <button class="btn btn-secondary" id="btn-set-speed">Set Speed</button>
+        </div>
+
+        <!-- Emergency Stop -->
+        <div class="control-group emergency-group">
+          <button class="btn btn-emergency" id="btn-emergency">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="15" y1="9" x2="9" y2="15" />
+              <line x1="9" y1="9" x2="15" y2="15" />
+            </svg>
+            EMERGENCY STOP
+          </button>
+        </div>
+
+        <!-- Command History -->
+        <div class="control-group">
+          <h3 class="subsection-title">Recent Commands</h3>
+          <div class="command-history" id="command-history">
+            <div class="command-item placeholder">
+              <span class="command-time">--:--:--</span>
+              <span class="command-text">No commands yet</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer: Logs Panel -->
+    <footer class="logs-panel">
+      <div class="logs-header">
+        <h2 class="panel-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14,2 14,8 20,8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+          </svg>
+          Sensor Logs
+        </h2>
+        <div class="logs-controls">
+          <select id="logs-filter" class="select-control">
+            <option value="">All Sensors</option>
+            <option value="temperature">Temperature</option>
+            <option value="pressure">Pressure</option>
+            <option value="flow_rate">Flow Rate</option>
+            <option value="motor_speed">Motor Speed</option>
+            <option value="power">Power</option>
+          </select>
+          <button class="btn btn-secondary" id="btn-export">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7,10 12,15 17,10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            Export CSV
+          </button>
+        </div>
+      </div>
+      <div class="logs-table-container">
+        <table class="logs-table">
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Sensor</th>
+              <th>Value</th>
+              <th>Motor State</th>
+            </tr>
+          </thead>
+          <tbody id="logs-tbody">
+            <!-- Populated by JavaScript -->
+          </tbody>
+        </table>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/config.js"></script>
+  <script src="js/socket-client.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/graphs.js"></script>
+  <script src="js/controls.js"></script>
+  <script src="js/logger-ui.js"></script>
+  <script src="js/app.js"></script>
+</body>
+
+</html>

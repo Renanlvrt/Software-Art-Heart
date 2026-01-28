@@ -1,0 +1,79 @@
+{
+    "interval_ms": 1000,
+    "sensors": {
+        "temperature": {
+            "baseline": 37.0,
+            "min": 30.0,
+            "max": 45.0,
+            "noise": 0.3,
+            "unit": "°C",
+            "description": "Body/device temperature"
+        },
+        "pressure": {
+            "systolic": 120,
+            "diastolic": 80,
+            "min": 50,
+            "max": 200,
+            "noise": 5,
+            "unit": "mmHg",
+            "description": "Cardiac pressure (pulsatile)"
+        },
+        "flow_rate": {
+            "max_flow": 6.0,
+            "min": 0,
+            "max": 10.0,
+            "noise": 0.2,
+            "unit": "L/min",
+            "description": "Blood flow rate"
+        },
+        "motor_speed": {
+            "max_rpm": 3000,
+            "min": 0,
+            "max": 5000,
+            "noise": 20,
+            "unit": "RPM",
+            "description": "Motor rotational speed"
+        },
+        "power": {
+            "standby": 2,
+            "min_running": 5,
+            "min": 0,
+            "max": 50,
+            "noise": 1,
+            "unit": "W",
+            "description": "Power consumption"
+        }
+    },
+    "thresholds": {
+        "temperature": {
+            "warning_high": 40.0,
+            "critical_high": 42.0,
+            "warning_low": 34.0,
+            "critical_low": 32.0
+        },
+        "pressure": {
+            "warning_high": 160,
+            "critical_high": 180,
+            "warning_low": 60,
+            "critical_low": 50
+        },
+        "flow_rate": {
+            "warning_low": 2.0,
+            "critical_low": 1.0
+        },
+        "motor_speed": {
+            "warning_high": 4000,
+            "critical_high": 4500
+        },
+        "power": {
+            "warning_high": 40,
+            "critical_high": 45
+        }
+    },
+    "motor": {
+        "min_speed_percent": 0,
+        "max_speed_percent": 100,
+        "default_speed_percent": 50,
+        "ramp_rate_percent_per_second": 10
+    }
+}

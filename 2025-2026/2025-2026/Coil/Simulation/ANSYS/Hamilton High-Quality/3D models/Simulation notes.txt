@@ -1,0 +1,11 @@
+The outer coil has a natural 2mm separation from the outer skin surface to account for clothing tolerances. Inner coil has zero tolerance.
+
+Litz wires have 48 strands of unwound copper separated by an air gap from each other to simulate the individual insulation. They are all soldered at the end.
+
+Hairs are around 1.5cm in length.
+
+Hair density is 4.55/cm^2 and covers a patch of 75 * 75mm (256 hairs). Only small patch used to avoid simulation crash.
+
+An additional simulation will be repeated on "tet hair.step" to simulate MHz frequencies.
+
+All simulations are performed on skin of thickness 20mm to match research data. "tet skinny.step" simulates the inaccurate 10mm thickness which, in reality, is too thin for the chest/abdominal region even for patients of BMI as low as 17.
