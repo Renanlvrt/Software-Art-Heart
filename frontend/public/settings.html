@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heart Pump | Settings</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <script src="/socket.io/socket.io.js"></script>
+    <link rel="stylesheet" href="/css/shared.css">
+</head>
+
+<body>
+    <a href="#main" class="skip-link">Skip to main content</a>
+    <div class="app">
+        <header class="topbar">
+            <button class="hamburger" id="menuOpen" aria-label="Open menu">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 12h18M3 6h18M3 18h18" />
+                </svg>
+            </button>
+            <span class="topbar-title">Settings</span>
+            <div class="topbar-right">
+                <div class="connection-badge"><span class="connection-dot" id="connectionDot"></span><span
+                        id="connectionText">...</span></div>
+            </div>
+        </header>
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-overlay" id="sidebarOverlay"></div>
+            <div class="sidebar-content">
+                <button class="sidebar-close" id="menuClose">×</button>
+                <div class="logo"><img src="/images/DU heart soc.jpeg" alt="Heart Pump" class="logo-icon"><span
+                        class="logo-text">Heart Pump</span></div>
+                <p class="section-label">Navigation</p>
+                <nav>
+                    <ul class="nav-list">
+                        <li><a href="/" class="nav-link">📊 Dashboard</a></li>
+                        <li><a href="/analysis.html" class="nav-link">📈 Analysis</a></li>
+                        <li><a href="/history.html" class="nav-link">📋 History</a></li>
+                        <li><a href="/settings.html" class="nav-link active">⚙️ Settings</a></li>
+                    </ul>
+                </nav>
+                <div class="emergency-section"><button class="btn-emergency" id="btnEmergency">⚠ Emergency Stop</button>
+                </div>
+            </div>
+        </aside>
+        <main class="main" id="main">
+            <header class="page-header">
+                <h1 class="page-title">Settings</h1>
+                <div class="page-header-right"><span class="timestamp" id="currentTime">--:--:--</span></div>
+            </header>
+            <div class="section-header"><span>Simulator</span></div>
+            <div class="settings-card">
+                <h3>Simulator Configuration</h3>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">Update Interval (seconds)</label><input
+                            type="number" class="form-input" id="simInterval" value="1" min="1" max="10"></div>
+                    <div class="form-group"><label class="form-label">Data Variation (%)</label><input type="number"
+                            class="form-input" id="simVariation" value="5" min="0" max="20"></div>
+                </div>
+                <div class="form-group"><label class="form-label">Mode</label><select class="form-select" id="simMode">
+                        <option value="auto">Auto (Realistic)</option>
+                        <option value="manual">Manual</option>
+                    </select></div>
+            </div>
+            <div class="section-header"><span>Thresholds & Alerts</span></div>
+            <div class="settings-card">
+                <h3>Warning Thresholds</h3>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">High Pressure (mmHg)</label><input type="number"
+                            class="form-input" id="threshPressureHigh" value="150"></div>
+                    <div class="form-group"><label class="form-label">Low Pressure (mmHg)</label><input type="number"
+                            class="form-input" id="threshPressureLow" value="60"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">High Temp (°C)</label><input type="number"
+                            class="form-input" id="threshTempHigh" value="38.5" step="0.1"></div>
+                    <div class="form-group"><label class="form-label">Low Temp (°C)</label><input type="number"
+                            class="form-input" id="threshTempLow" value="35.0" step="0.1"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">Low Flow (L/min)</label><input type="number"
+                            class="form-input" id="threshFlowLow" value="1.0" step="0.1"></div>
+                    <div class="form-group"><label class="form-label">High Speed (RPM)</label><input type="number"
+                            class="form-input" id="threshSpeedHigh" value="3500"></div>
+                </div>
+            </div>
+            <div class="section-header"><span>Motor Limits</span></div>
+            <div class="settings-card">
+                <h3>Motor Configuration</h3>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">Min Speed (RPM)</label><input type="number"
+                            class="form-input" id="motorMin" value="500"></div>
+                    <div class="form-group"><label class="form-label">Max Speed (RPM)</label><input type="number"
+                            class="form-input" id="motorMax" value="3500"></div>
+                </div>
+                <div class="form-group"><label class="form-label">Speed Step Size (RPM)</label><input type="number"
+                        class="form-input" id="motorStep" value="100"></div>
+            </div>
+            <div class="section-header"><span>Connection</span></div>
+            <div class="settings-card">
+                <h3>Serial Connection</h3>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">Port</label><select class="form-select"
+                            id="connPort">
+                            <option>COM3</option>
+                            <option>COM4</option>
+                            <option>/dev/ttyUSB0</option>
+                        </select></div>
+                    <div class="form-group"><label class="form-label">Baud Rate</label><select class="form-select"
+                            id="connBaud">
+                            <option>9600</option>
+                            <option>19200</option>
+                            <option selected>115200</option>
+                        </select></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">Auto-connect</label><select class="form-select"
+                            id="connAuto">
+                            <option value="yes">Yes</option>
+                            <option value="no">No</option>
+                        </select></div>
+                    <div class="form-group"><label class="form-label">Reconnect on disconnect</label><select
+                            class="form-select" id="connReconnect">
+                            <option value="yes">Yes</option>
+                            <option value="no">No</option>
+                        </select></div>
+                </div>
+            </div>
+            <div style="display:flex;gap:1rem;margin-top:1.5rem;">
+                <button class="btn btn-primary" id="btnSave">Save Settings</button>
+                <button class="btn btn-outline" id="btnReset">Reset to Defaults</button>
+            </div>
+        </main>
+    </div>
+    <script src="/js/shared.js"></script>
+    <script>
+        const defaults = { simInterval: 1, simVariation: 5, simMode: 'auto', threshPressureHigh: 150, threshPressureLow: 60, threshTempHigh: 38.5, threshTempLow: 35, threshFlowLow: 1, threshSpeedHigh: 3500, motorMin: 500, motorMax: 3500, motorStep: 100, connPort: 'COM3', connBaud: '115200', connAuto: 'yes', connReconnect: 'yes' };
+        function loadSettings() {
+            const saved = JSON.parse(localStorage.getItem('artheart_settings') || '{}');
+            const settings = { ...defaults, ...saved };
+            Object.keys(settings).forEach(k => { const el = document.getElementById(k); if (el) el.value = settings[k]; });
+        }
+        function saveSettings() {
+            const settings = {};
+            Object.keys(defaults).forEach(k => { const el = document.getElementById(k); if (el) settings[k] = el.type === 'number' ? parseFloat(el.value) : el.value; });
+            localStorage.setItem('artheart_settings', JSON.stringify(settings));
+            alert('Settings saved!');
+        }
+        function resetSettings() { localStorage.removeItem('artheart_settings'); loadSettings(); alert('Settings reset to defaults!'); }
+        document.getElementById('btnSave').onclick = saveSettings;
+        document.getElementById('btnReset').onclick = resetSettings;
+        document.addEventListener('DOMContentLoaded', () => { setupMenu(); updateTime(); setInterval(updateTime, 1000); loadSettings(); });
+    </script>
+</body>
+
+</html>

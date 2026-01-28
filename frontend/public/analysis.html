@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heart Pump | Analysis</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="/css/shared.css">
+</head>
+
+<body>
+    <a href="#main" class="skip-link">Skip to main content</a>
+    <div class="app">
+        <header class="topbar">
+            <button class="hamburger" id="menuOpen" aria-label="Open menu">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 12h18M3 6h18M3 18h18" />
+                </svg>
+            </button>
+            <span class="topbar-title">Analysis</span>
+            <div class="topbar-right">
+                <div class="connection-badge"><span class="connection-dot" id="connectionDot"></span><span
+                        id="connectionText">...</span></div>
+            </div>
+        </header>
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-overlay" id="sidebarOverlay"></div>
+            <div class="sidebar-content">
+                <button class="sidebar-close" id="menuClose">×</button>
+                <div class="logo"><img src="/images/DU heart soc.jpeg" alt="Heart Pump" class="logo-icon"><span
+                        class="logo-text">Heart Pump</span></div>
+                <p class="section-label">Navigation</p>
+                <nav>
+                    <ul class="nav-list">
+                        <li><a href="/" class="nav-link">📊 Dashboard</a></li>
+                        <li><a href="/analysis.html" class="nav-link active">📈 Analysis</a></li>
+                        <li><a href="/history.html" class="nav-link">📋 History</a></li>
+                        <li><a href="/settings.html" class="nav-link">⚙️ Settings</a></li>
+                    </ul>
+                </nav>
+                <div class="emergency-section"><button class="btn-emergency" id="btnEmergency">⚠ Emergency Stop</button>
+                </div>
+            </div>
+        </aside>
+        <main class="main" id="main">
+            <header class="page-header">
+                <h1 class="page-title">Analysis</h1>
+                <div class="page-header-right"><span class="timestamp" id="currentTime">--:--:--</span></div>
+            </header>
+            <div class="section-header"><span>Last 24 Hours</span></div>
+            <div class="analysis-grid">
+                <div class="analysis-card" id="analysisPressure">
+                    <div class="analysis-header">
+                        <h2 class="analysis-title"><span class="chart-dot" style="background:#C53030;"></span>Pressure
+                        </h2><span class="trend-arrow" id="trendPressure">→</span>
+                    </div>
+                    <div class="stats-row">
+                        <div class="stat"><span class="stat-label">Current</span><span class="stat-value"
+                                id="currentPressure">--</span></div>
+                        <div class="stat"><span class="stat-label">Avg</span><span class="stat-value"
+                                id="avgPressure">--</span></div>
+                        <div class="stat"><span class="stat-label">Min</span><span class="stat-value"
+                                id="minPressure">--</span></div>
+                        <div class="stat"><span class="stat-label">Max</span><span class="stat-value"
+                                id="maxPressure">--</span></div>
+                    </div>
+                    <div class="chart-body-lg"><canvas id="chartPressure"></canvas></div>
+                </div>
+                <div class="analysis-card" id="analysisTemp">
+                    <div class="analysis-header">
+                        <h2 class="analysis-title"><span class="chart-dot"
+                                style="background:#C5841A;"></span>Temperature</h2><span class="trend-arrow"
+                            id="trendTemp">→</span>
+                    </div>
+                    <div class="stats-row">
+                        <div class="stat"><span class="stat-label">Current</span><span class="stat-value"
+                                id="currentTemp">--</span></div>
+                        <div class="stat"><span class="stat-label">Avg</span><span class="stat-value"
+                                id="avgTemp">--</span></div>
+                        <div class="stat"><span class="stat-label">Min</span><span class="stat-value"
+                                id="minTemp">--</span></div>
+                        <div class="stat"><span class="stat-label">Max</span><span class="stat-value"
+                                id="maxTemp">--</span></div>
+                    </div>
+                    <div class="chart-body-lg"><canvas id="chartTemp"></canvas></div>
+                </div>
+                <div class="analysis-card" id="analysisFlow">
+                    <div class="analysis-header">
+                        <h2 class="analysis-title"><span class="chart-dot" style="background:#B8860B;"></span>Flow Rate
+                        </h2><span class="trend-arrow" id="trendFlow">→</span>
+                    </div>
+                    <div class="stats-row">
+                        <div class="stat"><span class="stat-label">Current</span><span class="stat-value"
+                                id="currentFlow">--</span></div>
+                        <div class="stat"><span class="stat-label">Avg</span><span class="stat-value"
+                                id="avgFlow">--</span></div>
+                        <div class="stat"><span class="stat-label">Min</span><span class="stat-value"
+                                id="minFlow">--</span></div>
+                        <div class="stat"><span class="stat-label">Max</span><span class="stat-value"
+                                id="maxFlow">--</span></div>
+                    </div>
+                    <div class="chart-body-lg"><canvas id="chartFlow"></canvas></div>
+                </div>
+                <div class="analysis-card" id="analysisRpm">
+                    <div class="analysis-header">
+                        <h2 class="analysis-title"><span class="chart-dot" style="background:#2E7D4A;"></span>Motor
+                            Speed</h2><span class="trend-arrow" id="trendRpm">→</span>
+                    </div>
+                    <div class="stats-row">
+                        <div class="stat"><span class="stat-label">Current</span><span class="stat-value"
+                                id="currentRpm">--</span></div>
+                        <div class="stat"><span class="stat-label">Avg</span><span class="stat-value"
+                                id="avgRpm">--</span></div>
+                        <div class="stat"><span class="stat-label">Min</span><span class="stat-value"
+                                id="minRpm">--</span></div>
+                        <div class="stat"><span class="stat-label">Max</span><span class="stat-value"
+                                id="maxRpm">--</span></div>
+                    </div>
+                    <div class="chart-body-lg"><canvas id="chartRpm"></canvas></div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="/js/shared.js"></script>
+    <script>
+        const charts = {}, chartData = { pressure: [], temp: [], flow: [], rpm: [] };
+        const chartCfg = { pressure: { color: '#C53030', unit: 'mmHg' }, temp: { color: '#C5841A', unit: '°C' }, flow: { color: '#B8860B', unit: 'L/min' }, rpm: { color: '#2E7D4A', unit: 'RPM' } };
+        function createChart(id, color) {
+            const ctx = document.getElementById(id)?.getContext('2d'); if (!ctx) return null;
+            return new Chart(ctx, { type: 'line', data: { labels: [], datasets: [{ data: [], borderColor: color, backgroundColor: color + '15', borderWidth: 2, fill: true, tension: 0.3, pointRadius: 0 }] }, options: { responsive: true, maintainAspectRatio: false, animation: { duration: 0 }, plugins: { legend: { display: false } }, scales: { x: { display: true, grid: { color: '#E8E4DF' }, ticks: { color: '#6B6B6B', font: { size: 10 }, maxTicksLimit: 8 } }, y: { display: true, grid: { color: '#E8E4DF' }, ticks: { color: '#6B6B6B', font: { size: 10 } } } } } });
+        }
+        function initCharts() { Object.keys(chartCfg).forEach(k => { charts[k] = createChart('chart' + k.charAt(0).toUpperCase() + k.slice(1), chartCfg[k].color); }); }
+        function updateStats(type, data) {
+            if (data.length === 0) return;
+            const vals = data.map(d => d.value);
+            const current = vals[vals.length - 1], avg = vals.reduce((a, b) => a + b, 0) / vals.length, min = Math.min(...vals), max = Math.max(...vals);
+            document.getElementById('current' + type.charAt(0).toUpperCase() + type.slice(1)).textContent = current.toFixed(1);
+            document.getElementById('avg' + type.charAt(0).toUpperCase() + type.slice(1)).textContent = avg.toFixed(1);
+            document.getElementById('min' + type.charAt(0).toUpperCase() + type.slice(1)).textContent = min.toFixed(1);
+            document.getElementById('max' + type.charAt(0).toUpperCase() + type.slice(1)).textContent = max.toFixed(1);
+            const trend = vals.length > 5 ? (vals[vals.length - 1] > vals[vals.length - 5] ? '↑' : vals[vals.length - 1] < vals[vals.length - 5] ? '↓' : '→') : '→';
+            document.getElementById('trend' + type.charAt(0).toUpperCase() + type.slice(1)).textContent = trend;
+        }
+        function processReading(r) {
+            const typeMap = { pressure: 'pressure', temperature: 'temp', flow_rate: 'flow', motor_speed: 'rpm' };
+            const t = typeMap[r.sensor_type]; if (!t) return;
+            chartData[t].push({ time: new Date(r.timestamp).toLocaleTimeString(), value: r.value });
+            if (chartData[t].length > 1440) chartData[t].shift();
+            if (charts[t]) { charts[t].data.labels = chartData[t].map(d => d.time); charts[t].data.datasets[0].data = chartData[t].map(d => d.value); charts[t].update('none'); }
+            updateStats(t, chartData[t]);
+        }
+        socket.on('reading', r => processReading(r));
+        socket.on('readings', rs => { if (Array.isArray(rs)) rs.forEach(r => processReading(r)); });
+        document.addEventListener('DOMContentLoaded', () => { initCharts(); setupMenu(); updateTime(); setInterval(updateTime, 1000); });
+    </script>
+</body>
+
+</html>

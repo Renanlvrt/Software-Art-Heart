@@ -1,0 +1,1530 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="ArtHeart Prototype Testing Platform - Real-time cardiac device monitoring">
+  <title>ArtHeart | Testing Platform</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    /* ============================================================
+       DESIGN TOKENS - RERUN-INSPIRED PROFESSIONAL SYSTEM
+       ============================================================ */
+    :root {
+      /* Primary - Technical Authority */
+      --color-bg-primary: #0a1428;
+      --color-bg-secondary: #0f1d32;
+      --color-bg-tertiary: #162340;
+      --color-bg-elevated: #1a2744;
+
+      /* Accent - Medical Teal (NOT Purple) */
+      --color-teal: #0d9488;
+      --color-teal-dark: #0a766b;
+      --color-teal-light: #14b8a6;
+
+      /* Semantic Colors */
+      --color-success: #10b981;
+      --color-warning: #f59e0b;
+      --color-error: #ef4444;
+      --color-info: #3b82f6;
+
+      /* Text */
+      --color-text-primary: #f1f5f9;
+      --color-text-secondary: #94a3b8;
+      --color-text-muted: #64748b;
+
+      /* Borders */
+      --color-border: #1e3a5f;
+      --color-border-subtle: #162340;
+
+      /* Chart Colors */
+      --chart-pressure: #ef4444;
+      --chart-temp: #f59e0b;
+      --chart-flow: #0d9488;
+      --chart-rpm: #10b981;
+
+      /* Typography - System Fonts, No Trendy Choices */
+      --font-body: system-ui, -apple-system, "Segoe UI", sans-serif;
+      --font-mono: "SF Mono", Monaco, "Cascadia Code", "Fira Code", monospace;
+      --font-size-xs: 11px;
+      --font-size-sm: 12px;
+      --font-size-base: 14px;
+      --font-size-lg: 16px;
+      --font-size-xl: 18px;
+      --font-size-2xl: 24px;
+      --font-weight-normal: 400;
+      --font-weight-medium: 500;
+      --font-weight-semibold: 600;
+      --line-height-tight: 1.3;
+      --line-height-normal: 1.5;
+
+      /* Spacing - 4px Grid */
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-8: 32px;
+
+      /* Border Radius - Technical, Not Rounded */
+      --radius-sm: 3px;
+      --radius-md: 4px;
+      --radius-lg: 6px;
+
+      /* Shadows - Minimal */
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.25);
+
+      /* Layout */
+      --sidebar-width: 200px;
+      --topbar-height: 48px;
+      --bottombar-height: 36px;
+    }
+
+    /* ============================================================
+       RESET & BASE
+       ============================================================ */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      font-size: 14px;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--color-bg-primary);
+      color: var(--color-text-primary);
+      line-height: var(--line-height-normal);
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Skip Link */
+    .skip-link {
+      position: absolute;
+      top: -100px;
+      left: var(--space-4);
+      background: var(--color-teal);
+      color: white;
+      padding: var(--space-2) var(--space-4);
+      border-radius: var(--radius-md);
+      z-index: 1000;
+      text-decoration: none;
+      font-size: var(--font-size-sm);
+    }
+
+    .skip-link:focus {
+      top: var(--space-4);
+    }
+
+    /* ============================================================
+       APP LAYOUT - RERUN-STYLE
+       ============================================================ */
+    .app {
+      display: grid;
+      grid-template-columns: var(--sidebar-width) 1fr;
+      grid-template-rows: var(--topbar-height) 1fr var(--bottombar-height);
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ============================================================
+       TOP BAR
+       ============================================================ */
+    .topbar {
+      grid-column: 1 / -1;
+      background: var(--color-bg-secondary);
+      border-bottom: 1px solid var(--color-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 var(--space-4);
+      height: var(--topbar-height);
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-weight: var(--font-weight-semibold);
+      font-size: var(--font-size-lg);
+      color: var(--color-text-primary);
+    }
+
+    .logo-icon {
+      width: 24px;
+      height: 24px;
+      background: var(--color-teal);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+
+    .topbar-divider {
+      width: 1px;
+      height: 24px;
+      background: var(--color-border);
+    }
+
+    .project-name {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-secondary);
+      font-family: var(--font-mono);
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+    }
+
+    .connection-status {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-size: var(--font-size-sm);
+      padding: var(--space-1) var(--space-3);
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: var(--radius-md);
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--color-success);
+    }
+
+    .status-dot.warning {
+      background: var(--color-warning);
+    }
+
+    .status-dot.error {
+      background: var(--color-error);
+    }
+
+    .status-label {
+      color: var(--color-success);
+      font-weight: var(--font-weight-medium);
+    }
+
+    .timestamp {
+      font-family: var(--font-mono);
+      font-size: var(--font-size-xs);
+      color: var(--color-text-muted);
+    }
+
+    /* ============================================================
+       SIDEBAR - RERUN-STYLE NAVIGATION
+       ============================================================ */
+    .sidebar {
+      background: var(--color-bg-secondary);
+      border-right: 1px solid var(--color-border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .sidebar-section {
+      padding: var(--space-3);
+    }
+
+    .sidebar-section-title {
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: var(--space-2);
+      padding: 0 var(--space-2);
+    }
+
+    .nav-list {
+      list-style: none;
+    }
+
+    .nav-item {
+      margin-bottom: 2px;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-2);
+      border-radius: var(--radius-md);
+      color: var(--color-text-secondary);
+      text-decoration: none;
+      font-size: var(--font-size-sm);
+      transition: background 100ms ease, color 100ms ease;
+      cursor: pointer;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+    }
+
+    .nav-link:hover {
+      background: var(--color-bg-tertiary);
+      color: var(--color-text-primary);
+    }
+
+    .nav-link.active {
+      background: var(--color-teal);
+      color: white;
+    }
+
+    .nav-link:focus {
+      outline: 2px solid var(--color-teal);
+      outline-offset: -2px;
+    }
+
+    .nav-icon {
+      font-size: 14px;
+      width: 18px;
+      text-align: center;
+    }
+
+    .sidebar-divider {
+      height: 1px;
+      background: var(--color-border);
+      margin: var(--space-2) var(--space-3);
+    }
+
+    /* Pump Controls in Sidebar */
+    .pump-control-card {
+      background: var(--color-bg-tertiary);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-3);
+      margin-bottom: var(--space-2);
+    }
+
+    .pump-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--space-2);
+    }
+
+    .pump-name {
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text-primary);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .pump-indicator {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--color-text-muted);
+    }
+
+    .pump-indicator.running {
+      background: var(--color-success);
+    }
+
+    .pump-status-text {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-muted);
+      font-family: var(--font-mono);
+    }
+
+    .pump-buttons {
+      display: flex;
+      gap: var(--space-1);
+      margin-bottom: var(--space-2);
+    }
+
+    .btn {
+      padding: var(--space-1) var(--space-2);
+      border-radius: var(--radius-md);
+      border: none;
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-medium);
+      cursor: pointer;
+      transition: all 100ms ease;
+      min-height: 28px;
+      min-width: 44px;
+      font-family: var(--font-body);
+    }
+
+    .btn:focus {
+      outline: 2px solid var(--color-teal);
+      outline-offset: 1px;
+    }
+
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--color-teal);
+      color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--color-teal-dark);
+      transform: translateY(-1px);
+    }
+
+    .btn-danger {
+      background: var(--color-error);
+      color: white;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background: #dc2626;
+      box-shadow: var(--shadow-md);
+    }
+
+    .btn-secondary {
+      background: var(--color-bg-elevated);
+      color: var(--color-text-secondary);
+      border: 1px solid var(--color-border);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: var(--color-bg-tertiary);
+    }
+
+    .speed-slider-container {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .slider {
+      flex: 1;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 4px;
+      background: var(--color-bg-primary);
+      border-radius: 2px;
+      outline: none;
+    }
+
+    .slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 12px;
+      height: 12px;
+      background: var(--color-teal);
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .slider:focus {
+      outline: 2px solid var(--color-teal);
+      outline-offset: 2px;
+    }
+
+    .speed-value {
+      font-family: var(--font-mono);
+      font-size: var(--font-size-xs);
+      color: var(--color-text-secondary);
+      min-width: 55px;
+      text-align: right;
+    }
+
+    /* ============================================================
+       MAIN CONTENT AREA
+       ============================================================ */
+    .main-content {
+      background: var(--color-bg-primary);
+      overflow-y: auto;
+      padding: var(--space-4);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+
+    /* KPI Metrics Row */
+    .metrics-row {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: var(--space-3);
+    }
+
+    .metric-card {
+      background: var(--color-bg-secondary);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-3);
+      position: relative;
+    }
+
+    .metric-card::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: var(--color-teal);
+      border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+    }
+
+    .metric-card.warning::before {
+      background: var(--color-warning);
+    }
+
+    .metric-card.critical::before {
+      background: var(--color-error);
+    }
+
+    .metric-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: var(--space-1);
+    }
+
+    .metric-label {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-muted);
+      font-weight: var(--font-weight-medium);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .metric-status {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: var(--radius-sm);
+      font-weight: var(--font-weight-semibold);
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--color-success);
+    }
+
+    .metric-status.warning {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--color-warning);
+    }
+
+    .metric-status.critical {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--color-error);
+    }
+
+    .metric-value {
+      font-size: var(--font-size-2xl);
+      font-weight: var(--font-weight-semibold);
+      font-family: var(--font-mono);
+      color: var(--color-text-primary);
+      line-height: 1;
+    }
+
+    .metric-unit {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-muted);
+      margin-top: var(--space-1);
+    }
+
+    /* Charts Section */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-3);
+      flex: 1;
+      min-height: 0;
+    }
+
+    .chart-panel {
+      background: var(--color-bg-secondary);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      display: flex;
+      flex-direction: column;
+      min-height: 200px;
+    }
+
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--space-3);
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+
+    .chart-title {
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text-primary);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .chart-color-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+    }
+
+    .chart-controls {
+      display: flex;
+      gap: var(--space-1);
+    }
+
+    .chart-btn {
+      padding: 3px 8px;
+      font-size: var(--font-size-xs);
+      background: var(--color-bg-tertiary);
+      color: var(--color-text-muted);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 100ms;
+    }
+
+    .chart-btn:hover,
+    .chart-btn.active {
+      background: var(--color-teal);
+      color: white;
+      border-color: var(--color-teal);
+    }
+
+    .chart-body {
+      flex: 1;
+      padding: var(--space-2);
+      position: relative;
+    }
+
+    .chart-canvas {
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    /* Data Table */
+    .data-panel {
+      background: var(--color-bg-secondary);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      max-height: 250px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .data-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--space-3);
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+
+    .data-title {
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text-primary);
+    }
+
+    .data-actions {
+      display: flex;
+      gap: var(--space-2);
+    }
+
+    .table-container {
+      flex: 1;
+      overflow: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--font-size-sm);
+    }
+
+    th {
+      background: var(--color-bg-tertiary);
+      color: var(--color-text-muted);
+      font-weight: var(--font-weight-medium);
+      font-size: var(--font-size-xs);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      padding: var(--space-2) var(--space-3);
+      text-align: left;
+      position: sticky;
+      top: 0;
+    }
+
+    td {
+      padding: var(--space-2) var(--space-3);
+      border-bottom: 1px solid var(--color-border-subtle);
+      font-family: var(--font-mono);
+      font-size: var(--font-size-xs);
+    }
+
+    tr:hover td {
+      background: rgba(13, 148, 136, 0.05);
+    }
+
+    .sensor-pressure {
+      color: var(--chart-pressure);
+    }
+
+    .sensor-temp {
+      color: var(--chart-temp);
+    }
+
+    .sensor-flow {
+      color: var(--chart-flow);
+    }
+
+    .sensor-rpm {
+      color: var(--chart-rpm);
+    }
+
+    /* ============================================================
+       BOTTOM BAR
+       ============================================================ */
+    .bottombar {
+      grid-column: 1 / -1;
+      background: var(--color-bg-secondary);
+      border-top: 1px solid var(--color-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 var(--space-4);
+      font-size: var(--font-size-xs);
+    }
+
+    .bottombar-left {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: var(--space-1);
+    }
+
+    .nav-tab {
+      padding: var(--space-1) var(--space-3);
+      color: var(--color-text-muted);
+      text-decoration: none;
+      border-radius: var(--radius-sm);
+      transition: all 100ms;
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-size: var(--font-size-xs);
+    }
+
+    .nav-tab:hover {
+      color: var(--color-text-secondary);
+      background: var(--color-bg-tertiary);
+    }
+
+    .nav-tab.active {
+      color: var(--color-teal);
+      background: rgba(13, 148, 136, 0.1);
+    }
+
+    .bottombar-right {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      color: var(--color-text-muted);
+    }
+
+    .bottombar-stat {
+      display: flex;
+      align-items: center;
+      gap: var(--space-1);
+    }
+
+    /* Emergency Stop Button */
+    .emergency-btn {
+      background: linear-gradient(180deg, var(--color-error) 0%, #dc2626 100%);
+      color: white;
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-semibold);
+      padding: var(--space-2) var(--space-4);
+      border: 1px solid var(--color-error);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 100ms;
+      margin-top: auto;
+    }
+
+    .emergency-btn:hover {
+      box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
+      transform: scale(1.02);
+    }
+
+    .emergency-btn:focus {
+      outline: 2px solid var(--color-error);
+      outline-offset: 2px;
+    }
+
+    /* ============================================================
+       ALERTS
+       ============================================================ */
+    .alerts-container {
+      position: fixed;
+      top: calc(var(--topbar-height) + var(--space-4));
+      right: var(--space-4);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+
+    .alert {
+      background: var(--color-bg-elevated);
+      border: 1px solid var(--color-border);
+      border-left: 3px solid var(--color-warning);
+      border-radius: var(--radius-md);
+      padding: var(--space-3);
+      min-width: 280px;
+      box-shadow: var(--shadow-md);
+      animation: slideIn 200ms ease-out;
+    }
+
+    .alert.critical {
+      border-left-color: var(--color-error);
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    .alert-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-1);
+    }
+
+    .alert-title {
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      color: var(--color-warning);
+    }
+
+    .alert.critical .alert-title {
+      color: var(--color-error);
+    }
+
+    .alert-close {
+      background: none;
+      border: none;
+      color: var(--color-text-muted);
+      cursor: pointer;
+      padding: 2px;
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    .alert-message {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-secondary);
+    }
+
+    /* ============================================================
+       RESPONSIVE
+       ============================================================ */
+    @media (max-width: 1200px) {
+      .metrics-row {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (max-width: 900px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        display: none;
+      }
+
+      .metrics-row {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .charts-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .metrics-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <div class="app">
+    <!-- TOP BAR -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="logo">
+          <span class="logo-icon">♥</span>
+          <span>ArtHeart</span>
+        </div>
+        <div class="topbar-divider"></div>
+        <span class="project-name">cardiac_prototype_v1.2</span>
+      </div>
+      <div class="topbar-right">
+        <div class="connection-status" role="status" aria-live="polite">
+          <span class="status-dot" id="connectionDot"></span>
+          <span class="status-label" id="connectionLabel">Connected</span>
+        </div>
+        <span class="timestamp" id="currentTime">--:--:--</span>
+      </div>
+    </header>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" aria-label="Navigation">
+      <nav class="sidebar-section">
+        <h2 class="sidebar-section-title">Views</h2>
+        <ul class="nav-list">
+          <li class="nav-item">
+            <button class="nav-link active" aria-current="page">
+              <span class="nav-icon">📊</span> Dashboard
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link">
+              <span class="nav-icon">📈</span> Analysis
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link">
+              <span class="nav-icon">📋</span> Logs
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link">
+              <span class="nav-icon">⚙️</span> Settings
+            </button>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="sidebar-divider"></div>
+
+      <div class="sidebar-section">
+        <h2 class="sidebar-section-title">Left Pump</h2>
+        <div class="pump-control-card">
+          <div class="pump-header">
+            <span class="pump-name">
+              <span class="pump-indicator" id="pumpLeftIndicator"></span>
+              Motor L
+            </span>
+            <span class="pump-status-text" id="pumpLeftStatus">Stopped</span>
+          </div>
+          <div class="pump-buttons">
+            <button class="btn btn-primary" id="btnStartLeft" aria-label="Start left pump">Start</button>
+            <button class="btn btn-danger" id="btnStopLeft" aria-label="Stop left pump">Stop</button>
+          </div>
+          <div class="speed-slider-container">
+            <input type="range" class="slider" id="speedLeft" min="0" max="4000" value="0" aria-label="Left pump speed">
+            <span class="speed-value" id="speedLeftValue">0 RPM</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <h2 class="sidebar-section-title">Right Pump</h2>
+        <div class="pump-control-card">
+          <div class="pump-header">
+            <span class="pump-name">
+              <span class="pump-indicator" id="pumpRightIndicator"></span>
+              Motor R
+            </span>
+            <span class="pump-status-text" id="pumpRightStatus">Stopped</span>
+          </div>
+          <div class="pump-buttons">
+            <button class="btn btn-primary" id="btnStartRight" aria-label="Start right pump">Start</button>
+            <button class="btn btn-danger" id="btnStopRight" aria-label="Stop right pump">Stop</button>
+          </div>
+          <div class="speed-slider-container">
+            <input type="range" class="slider" id="speedRight" min="0" max="4000" value="0"
+              aria-label="Right pump speed">
+            <span class="speed-value" id="speedRightValue">0 RPM</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section" style="margin-top: auto; padding-bottom: var(--space-4);">
+        <button class="emergency-btn" id="btnEmergency" aria-label="Emergency stop all pumps">
+          ⚠ EMERGENCY STOP
+        </button>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content" id="main-content">
+      <!-- KPI Metrics -->
+      <section class="metrics-row" aria-label="Key Metrics">
+        <div class="metric-card" id="metricTemp">
+          <div class="metric-header">
+            <span class="metric-label">Temperature</span>
+            <span class="metric-status" id="statusTemp">OK</span>
+          </div>
+          <div class="metric-value" id="valueTemp">--</div>
+          <div class="metric-unit">°C</div>
+        </div>
+        <div class="metric-card" id="metricPressure">
+          <div class="metric-header">
+            <span class="metric-label">Pressure</span>
+            <span class="metric-status" id="statusPressure">OK</span>
+          </div>
+          <div class="metric-value" id="valuePressure">--</div>
+          <div class="metric-unit">mmHg</div>
+        </div>
+        <div class="metric-card" id="metricFlow">
+          <div class="metric-header">
+            <span class="metric-label">Flow Rate</span>
+            <span class="metric-status" id="statusFlow">OK</span>
+          </div>
+          <div class="metric-value" id="valueFlow">--</div>
+          <div class="metric-unit">L/min</div>
+        </div>
+        <div class="metric-card" id="metricRpm">
+          <div class="metric-header">
+            <span class="metric-label">Motor Speed</span>
+            <span class="metric-status" id="statusRpm">OK</span>
+          </div>
+          <div class="metric-value" id="valueRpm">--</div>
+          <div class="metric-unit">RPM</div>
+        </div>
+        <div class="metric-card" id="metricPower">
+          <div class="metric-header">
+            <span class="metric-label">Power</span>
+            <span class="metric-status" id="statusPower">OK</span>
+          </div>
+          <div class="metric-value" id="valuePower">--</div>
+          <div class="metric-unit">W</div>
+        </div>
+      </section>
+
+      <!-- Charts -->
+      <section class="charts-grid" aria-label="Real-time Charts">
+        <div class="chart-panel">
+          <div class="chart-header">
+            <h3 class="chart-title">
+              <span class="chart-color-dot" style="background: var(--chart-pressure);"></span>
+              Pressure
+            </h3>
+            <div class="chart-controls">
+              <button class="chart-btn active" data-range="1m">1m</button>
+              <button class="chart-btn" data-range="5m">5m</button>
+              <button class="chart-btn" data-range="1h">1h</button>
+            </div>
+          </div>
+          <div class="chart-body">
+            <canvas id="chartPressure" class="chart-canvas" aria-label="Pressure over time"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-panel">
+          <div class="chart-header">
+            <h3 class="chart-title">
+              <span class="chart-color-dot" style="background: var(--chart-temp);"></span>
+              Temperature
+            </h3>
+            <div class="chart-controls">
+              <button class="chart-btn active" data-range="1m">1m</button>
+              <button class="chart-btn" data-range="5m">5m</button>
+              <button class="chart-btn" data-range="1h">1h</button>
+            </div>
+          </div>
+          <div class="chart-body">
+            <canvas id="chartTemp" class="chart-canvas" aria-label="Temperature over time"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-panel">
+          <div class="chart-header">
+            <h3 class="chart-title">
+              <span class="chart-color-dot" style="background: var(--chart-flow);"></span>
+              Flow Rate
+            </h3>
+            <div class="chart-controls">
+              <button class="chart-btn active" data-range="1m">1m</button>
+              <button class="chart-btn" data-range="5m">5m</button>
+              <button class="chart-btn" data-range="1h">1h</button>
+            </div>
+          </div>
+          <div class="chart-body">
+            <canvas id="chartFlow" class="chart-canvas" aria-label="Flow rate over time"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-panel">
+          <div class="chart-header">
+            <h3 class="chart-title">
+              <span class="chart-color-dot" style="background: var(--chart-rpm);"></span>
+              Motor Speed
+            </h3>
+            <div class="chart-controls">
+              <button class="chart-btn active" data-range="1m">1m</button>
+              <button class="chart-btn" data-range="5m">5m</button>
+              <button class="chart-btn" data-range="1h">1h</button>
+            </div>
+          </div>
+          <div class="chart-body">
+            <canvas id="chartRpm" class="chart-canvas" aria-label="RPM over time"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- Data Table -->
+      <section class="data-panel" aria-label="Sensor Data Log">
+        <div class="data-header">
+          <h3 class="data-title">Recent Readings</h3>
+          <div class="data-actions">
+            <button class="btn btn-secondary" id="btnClear">Clear</button>
+            <button class="btn btn-primary" id="btnExport">Export CSV</button>
+          </div>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Temperature</th>
+                <th>Pressure</th>
+                <th>Flow</th>
+                <th>RPM</th>
+                <th>Power</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody">
+              <!-- Data populated by JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <!-- BOTTOM BAR -->
+    <footer class="bottombar">
+      <div class="bottombar-left">
+        <div class="nav-tabs">
+          <button class="nav-tab active">Dashboard</button>
+          <button class="nav-tab">State Data</button>
+          <button class="nav-tab">Calibration</button>
+          <button class="nav-tab">Plot View</button>
+        </div>
+      </div>
+      <div class="bottombar-right">
+        <span class="bottombar-stat">Samples: <span id="sampleCount">0</span></span>
+        <span class="bottombar-stat">Mode: Simulator</span>
+        <span class="bottombar-stat">v1.2.0</span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Alerts Container -->
+  <div class="alerts-container" id="alertsContainer" aria-live="assertive"></div>
+
+  <script>
+    // ============================================================
+    // REALISTIC PHYSIOLOGICAL SIMULATOR
+    // ============================================================
+    class PhysiologicalSimulator {
+      constructor() {
+        this.baseTemp = 37.0;
+        this.baseSystolic = 120;
+        this.baseDiastolic = 80;
+        this.baseFlow = 4.5;
+        this.pumpLeft = { running: false, rpm: 0 };
+        this.pumpRight = { running: false, rpm: 0 };
+        this.startTime = Date.now();
+      }
+
+      getTemperature() {
+        const elapsed = (Date.now() - this.startTime) / 1000;
+        const drift = Math.sin(elapsed / 60) * 0.3;
+        const micro = (Math.random() - 0.5) * 0.1;
+        const pumpHeat = ((this.pumpLeft.rpm + this.pumpRight.rpm) / 8000) * 1.2;
+        return this.baseTemp + drift + micro + pumpHeat;
+      }
+
+      getPressure() {
+        if (!this.pumpLeft.running && !this.pumpRight.running) {
+          return this.baseDiastolic + (Math.random() - 0.5) * 4;
+        }
+        const beat = (Date.now() % 1000) / 1000;
+        const amplitude = this.baseSystolic - this.baseDiastolic;
+
+        let pressure;
+        if (beat < 0.3) {
+          pressure = this.baseDiastolic + amplitude * Math.sin((beat / 0.3) * Math.PI);
+        } else {
+          const decay = (beat - 0.3) / 0.7;
+          pressure = this.baseDiastolic + amplitude * 0.2 * Math.exp(-decay * 3);
+        }
+        return pressure + (Math.random() - 0.5) * 4;
+      }
+
+      getFlowRate() {
+        const avgRpm = (this.pumpLeft.rpm + this.pumpRight.rpm) / 2;
+        if (avgRpm === 0) return 0;
+        const base = this.baseFlow + (avgRpm / 4000) * 2.5;
+        return Math.max(0, Math.min(7, base + (Math.random() - 0.5) * 0.4));
+      }
+
+      getRpm() {
+        return Math.round((this.pumpLeft.rpm + this.pumpRight.rpm) / 2);
+      }
+
+      getPower() {
+        const avgRpm = (this.pumpLeft.rpm + this.pumpRight.rpm) / 2;
+        if (avgRpm === 0) return 2.1;
+        const power = 2 + (avgRpm / 4000) * 35;
+        return power + (Math.random() - 0.5) * 2;
+      }
+
+      getData() {
+        return {
+          timestamp: new Date().toLocaleTimeString(),
+          temperature: this.getTemperature().toFixed(1),
+          pressure: Math.round(this.getPressure()),
+          flow: this.getFlowRate().toFixed(2),
+          rpm: this.getRpm(),
+          power: this.getPower().toFixed(1)
+        };
+      }
+    }
+
+    // ============================================================
+    // THRESHOLDS
+    // ============================================================
+    const THRESHOLDS = {
+      temperature: { warning: 38.5, critical: 40.0 },
+      pressure: { warningHigh: 150, criticalHigh: 180, warningLow: 55 },
+      flow: { warningLow: 2.0, criticalLow: 1.0 }
+    };
+
+    // ============================================================
+    // CHARTS
+    // ============================================================
+    const charts = {};
+    const chartData = {
+      pressure: { labels: [], data: [] },
+      temp: { labels: [], data: [] },
+      flow: { labels: [], data: [] },
+      rpm: { labels: [], data: [] }
+    };
+    const MAX_POINTS = 60;
+
+    function initCharts() {
+      const config = {
+        pressure: { color: '#ef4444', id: 'chartPressure' },
+        temp: { color: '#f59e0b', id: 'chartTemp' },
+        flow: { color: '#0d9488', id: 'chartFlow' },
+        rpm: { color: '#10b981', id: 'chartRpm' }
+      };
+
+      Object.entries(config).forEach(([key, cfg]) => {
+        const ctx = document.getElementById(cfg.id).getContext('2d');
+        charts[key] = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: [],
+            datasets: [{
+              data: [],
+              borderColor: cfg.color,
+              backgroundColor: cfg.color + '15',
+              borderWidth: 1.5,
+              fill: true,
+              tension: 0.3,
+              pointRadius: 0
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 0 },
+            plugins: { legend: { display: false } },
+            scales: {
+              x: {
+                display: true,
+                grid: { color: 'rgba(255,255,255,0.05)' },
+                ticks: { color: '#64748b', font: { size: 10 }, maxTicksLimit: 5 }
+              },
+              y: {
+                display: true,
+                grid: { color: 'rgba(255,255,255,0.05)' },
+                ticks: { color: '#64748b', font: { size: 10 } }
+              }
+            }
+          }
+        });
+      });
+    }
+
+    function updateCharts(data) {
+      const t = data.timestamp;
+      const vals = {
+        pressure: data.pressure,
+        temp: parseFloat(data.temperature),
+        flow: parseFloat(data.flow),
+        rpm: data.rpm
+      };
+
+      Object.keys(chartData).forEach(k => {
+        chartData[k].labels.push(t);
+        chartData[k].data.push(vals[k]);
+        if (chartData[k].labels.length > MAX_POINTS) {
+          chartData[k].labels.shift();
+          chartData[k].data.shift();
+        }
+        charts[k].data.labels = chartData[k].labels;
+        charts[k].data.datasets[0].data = chartData[k].data;
+        charts[k].update('none');
+      });
+    }
+
+    // ============================================================
+    // METRICS
+    // ============================================================
+    function updateMetrics(data) {
+      document.getElementById('valueTemp').textContent = data.temperature;
+      document.getElementById('valuePressure').textContent = data.pressure;
+      document.getElementById('valueFlow').textContent = data.flow;
+      document.getElementById('valueRpm').textContent = data.rpm;
+      document.getElementById('valuePower').textContent = data.power;
+
+      checkThreshold('Temp', parseFloat(data.temperature), THRESHOLDS.temperature.warning, THRESHOLDS.temperature.critical);
+      checkThreshold('Pressure', data.pressure, THRESHOLDS.pressure.warningHigh, THRESHOLDS.pressure.criticalHigh);
+
+      const fl = parseFloat(data.flow);
+      if (fl > 0 && fl < THRESHOLDS.flow.criticalLow) setStatus('Flow', 'critical');
+      else if (fl > 0 && fl < THRESHOLDS.flow.warningLow) setStatus('Flow', 'warning');
+      else setStatus('Flow', 'ok');
+
+      setStatus('Rpm', 'ok');
+      setStatus('Power', 'ok');
+    }
+
+    function checkThreshold(name, val, warn, crit) {
+      if (val >= crit) {
+        setStatus(name, 'critical');
+        showAlert(name, val, 'critical');
+      } else if (val >= warn) {
+        setStatus(name, 'warning');
+        showAlert(name, val, 'warning');
+      } else {
+        setStatus(name, 'ok');
+      }
+    }
+
+    function setStatus(name, status) {
+      const card = document.getElementById('metric' + name);
+      const badge = document.getElementById('status' + name);
+      card.classList.remove('warning', 'critical');
+      badge.classList.remove('warning', 'critical');
+      badge.textContent = status.toUpperCase();
+      if (status !== 'ok') {
+        card.classList.add(status);
+        badge.classList.add(status);
+      }
+    }
+
+    // ============================================================
+    // ALERTS
+    // ============================================================
+    const activeAlerts = new Set();
+
+    function showAlert(sensor, val, level) {
+      const key = sensor + level;
+      if (activeAlerts.has(key)) return;
+      activeAlerts.add(key);
+
+      const container = document.getElementById('alertsContainer');
+      const alert = document.createElement('div');
+      alert.className = 'alert ' + level;
+      alert.innerHTML = `
+        <div class="alert-header">
+          <span class="alert-title">${level.toUpperCase()}: ${sensor}</span>
+          <button class="alert-close" aria-label="Dismiss">×</button>
+        </div>
+        <p class="alert-message">Value: ${val} — Threshold exceeded</p>
+      `;
+      alert.querySelector('.alert-close').onclick = () => {
+        alert.remove();
+        activeAlerts.delete(key);
+      };
+      container.appendChild(alert);
+      setTimeout(() => {
+        if (alert.parentNode) {
+          alert.remove();
+          activeAlerts.delete(key);
+        }
+      }, 8000);
+    }
+
+    // ============================================================
+    // TABLE
+    // ============================================================
+    const tableRows = [];
+    let sampleCount = 0;
+
+    function addTableRow(data) {
+      tableRows.unshift(data);
+      if (tableRows.length > 30) tableRows.pop();
+      sampleCount++;
+      document.getElementById('sampleCount').textContent = sampleCount;
+      renderTable();
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = tableRows.slice(0, 10).map(d => `
+        <tr>
+          <td>${d.timestamp}</td>
+          <td class="sensor-temp">${d.temperature}</td>
+          <td class="sensor-pressure">${d.pressure}</td>
+          <td class="sensor-flow">${d.flow}</td>
+          <td class="sensor-rpm">${d.rpm}</td>
+          <td>${d.power}</td>
+        </tr>
+      `).join('');
+    }
+
+    // ============================================================
+    // CONTROLS
+    // ============================================================
+    const sim = new PhysiologicalSimulator();
+
+    function setupControls() {
+      // Left Pump
+      document.getElementById('btnStartLeft').onclick = () => {
+        const spd = parseInt(document.getElementById('speedLeft').value) || 2000;
+        sim.pumpLeft = { running: true, rpm: spd };
+        updatePumpUI('Left', true, spd);
+      };
+      document.getElementById('btnStopLeft').onclick = () => {
+        sim.pumpLeft = { running: false, rpm: 0 };
+        updatePumpUI('Left', false, 0);
+      };
+      document.getElementById('speedLeft').oninput = e => {
+        const v = parseInt(e.target.value);
+        document.getElementById('speedLeftValue').textContent = v + ' RPM';
+        if (sim.pumpLeft.running) sim.pumpLeft.rpm = v;
+      };
+
+      // Right Pump
+      document.getElementById('btnStartRight').onclick = () => {
+        const spd = parseInt(document.getElementById('speedRight').value) || 2000;
+        sim.pumpRight = { running: true, rpm: spd };
+        updatePumpUI('Right', true, spd);
+      };
+      document.getElementById('btnStopRight').onclick = () => {
+        sim.pumpRight = { running: false, rpm: 0 };
+        updatePumpUI('Right', false, 0);
+      };
+      document.getElementById('speedRight').oninput = e => {
+        const v = parseInt(e.target.value);
+        document.getElementById('speedRightValue').textContent = v + ' RPM';
+        if (sim.pumpRight.running) sim.pumpRight.rpm = v;
+      };
+
+      // Emergency
+      document.getElementById('btnEmergency').onclick = () => {
+        sim.pumpLeft = { running: false, rpm: 0 };
+        sim.pumpRight = { running: false, rpm: 0 };
+        updatePumpUI('Left', false, 0);
+        updatePumpUI('Right', false, 0);
+        document.getElementById('speedLeft').value = 0;
+        document.getElementById('speedRight').value = 0;
+        document.getElementById('speedLeftValue').textContent = '0 RPM';
+        document.getElementById('speedRightValue').textContent = '0 RPM';
+        showAlert('System', 'Emergency Stop', 'critical');
+      };
+
+      // Export
+      document.getElementById('btnExport').onclick = exportCSV;
+      document.getElementById('btnClear').onclick = () => {
+        tableRows.length = 0;
+        renderTable();
+      };
+    }
+
+    function updatePumpUI(side, running, rpm) {
+      const ind = document.getElementById('pumpIndicator' + side);
+      const status = document.getElementById('pump' + side + 'Status');
+      if (running) {
+        ind.classList.add('running');
+        status.textContent = rpm + ' RPM';
+      } else {
+        ind.classList.remove('running');
+        status.textContent = 'Stopped';
+      }
+    }
+
+    function exportCSV() {
+      const header = 'Timestamp,Temperature,Pressure,Flow,RPM,Power';
+      const rows = tableRows.map(d => `${d.timestamp},${d.temperature},${d.pressure},${d.flow},${d.rpm},${d.power}`);
+      const csv = [header, ...rows].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'artheart_data_' + new Date().toISOString().slice(0, 10) + '.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // ============================================================
+    // MAIN LOOP
+    // ============================================================
+    function tick() {
+      const data = sim.getData();
+      updateMetrics(data);
+      updateCharts(data);
+      addTableRow(data);
+      document.getElementById('currentTime').textContent = data.timestamp;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initCharts();
+      setupControls();
+      tick();
+      setInterval(tick, 1000);
+    });
+  </script>
+</body>
+
+</html>

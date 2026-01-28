@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heart Pump | History</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <script src="/socket.io/socket.io.js"></script>
+    <link rel="stylesheet" href="/css/shared.css">
+</head>
+
+<body>
+    <a href="#main" class="skip-link">Skip to main content</a>
+    <div class="app">
+        <header class="topbar">
+            <button class="hamburger" id="menuOpen" aria-label="Open menu">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 12h18M3 6h18M3 18h18" />
+                </svg>
+            </button>
+            <span class="topbar-title">History</span>
+            <div class="topbar-right">
+                <div class="connection-badge"><span class="connection-dot" id="connectionDot"></span><span
+                        id="connectionText">...</span></div>
+            </div>
+        </header>
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-overlay" id="sidebarOverlay"></div>
+            <div class="sidebar-content">
+                <button class="sidebar-close" id="menuClose">×</button>
+                <div class="logo"><img src="/images/DU heart soc.jpeg" alt="Heart Pump" class="logo-icon"><span
+                        class="logo-text">Heart Pump</span></div>
+                <p class="section-label">Navigation</p>
+                <nav>
+                    <ul class="nav-list">
+                        <li><a href="/" class="nav-link">📊 Dashboard</a></li>
+                        <li><a href="/analysis.html" class="nav-link">📈 Analysis</a></li>
+                        <li><a href="/history.html" class="nav-link active">📋 History</a></li>
+                        <li><a href="/settings.html" class="nav-link">⚙️ Settings</a></li>
+                    </ul>
+                </nav>
+                <div class="emergency-section"><button class="btn-emergency" id="btnEmergency">⚠ Emergency Stop</button>
+                </div>
+            </div>
+        </aside>
+        <main class="main" id="main">
+            <header class="page-header">
+                <h1 class="page-title">History</h1>
+                <div class="page-header-right"><span class="timestamp" id="currentTime">--:--:--</span></div>
+            </header>
+            <div class="section-header"><span>Event Log</span></div>
+            <div class="data-panel">
+                <div class="data-header">
+                    <h2 class="data-title">Command & Sensor History</h2>
+                    <div class="filter-row">
+                        <div class="form-group"><label class="form-label">From</label><input type="date"
+                                class="form-input" id="filterFrom"></div>
+                        <div class="form-group"><label class="form-label">To</label><input type="date"
+                                class="form-input" id="filterTo"></div>
+                        <button class="btn btn-primary btn-sm" id="btnApplyFilter">Apply</button>
+                        <button class="btn btn-outline btn-sm" id="btnExport">Export CSV</button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="/js/shared.js"></script>
+    <script>
+        const historyData = [];
+        function addEvent(type, description, status = 'OK') {
+            const event = { timestamp: new Date().toISOString(), type, description, status };
+            historyData.unshift(event);
+            if (historyData.length > 500) historyData.pop();
+            renderHistory();
+        }
+        function renderHistory() {
+            const from = document.getElementById('filterFrom').value, to = document.getElementById('filterTo').value;
+            let filtered = historyData;
+            if (from) filtered = filtered.filter(e => e.timestamp >= from);
+            if (to) filtered = filtered.filter(e => e.timestamp <= to + 'T23:59:59');
+            document.getElementById('historyTable').innerHTML = filtered.slice(0, 100).map(e => {
+                const statusClass = e.status === 'OK' ? 'status-ok' : e.status === 'WARNING' ? 'status-warning' : 'status-error';
+                return `<tr><td>${new Date(e.timestamp).toLocaleString()}</td><td>${e.type}</td><td>${e.description}</td><td class="${statusClass}">${e.status}</td></tr>`;
+            }).join('');
+        }
+        socket.on('state', s => { if (s.motor) addEvent('Motor', `State: ${s.motor.state}, Speed: ${s.motor.speed}%`); });
+        socket.on('control_response', r => addEvent('Command', r.success ? 'Command executed' : 'Command failed', r.success ? 'OK' : 'ERROR'));
+        socket.on('reading', r => { if (r.value > 150 || r.value < 30) addEvent('Sensor', `${r.sensor_type}: ${r.value.toFixed(1)} (threshold exceeded)`, 'WARNING'); });
+        socket.on('emergency_stop', () => addEvent('System', 'EMERGENCY STOP ACTIVATED', 'ERROR'));
+        document.getElementById('btnApplyFilter').onclick = renderHistory;
+        document.getElementById('btnExport').onclick = () => {
+            const csv = ['Timestamp,Type,Description,Status', ...historyData.map(e => `${e.timestamp},${e.type},"${e.description}",${e.status}`)].join('\n');
+            const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'history.csv'; a.click();
+        };
+        document.addEventListener('DOMContentLoaded', () => { setupMenu(); updateTime(); setInterval(updateTime, 1000); addEvent('System', 'Dashboard loaded'); });
+    </script>
+</body>
+
+</html>

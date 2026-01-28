@@ -1,0 +1,4 @@
+This is really good, I love the design, now I want you to connect the front end with the backend so that the data start being visible through the graph.
+I want you to first learn how it was doing before ( see backup design/frontend).
+I want all the functionality to be there and working so that I can see the graphs working.
+In the future we will have a csv file to have all the data extracted from the esp 32 or arduino so that I have all the information and the software will be a way to display these
