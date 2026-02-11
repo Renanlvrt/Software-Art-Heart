@@ -1137,23 +1137,26 @@
             <li><a href="/settings.html" class="nav-link">⚙️ Settings</a></li>
           </ul>
         </nav>
-        <p class="section-label">Left Pump</p>
-        <div class="pump-card">
-          <div class="pump-header"><span class="pump-name"><span class="pump-indicator" id="pumpLeftInd"></span>Motor
-              L</span><span class="pump-status" id="pumpLeftStatus">Stopped</span></div>
-          <div class="pump-buttons"><button class="btn btn-primary btn-sm" id="btnStartLeft">Start</button><button
-              class="btn btn-danger btn-sm" id="btnStopLeft">Stop</button></div>
-          <div class="speed-control"><input type="range" class="slider" id="speedLeft" min="0" max="100" value="50"
-              aria-label="Left speed"><span class="speed-value" id="speedLeftVal">50%</span></div>
-        </div>
-        <p class="section-label">Right Pump</p>
-        <div class="pump-card">
-          <div class="pump-header"><span class="pump-name"><span class="pump-indicator" id="pumpRightInd"></span>Motor
-              R</span><span class="pump-status" id="pumpRightStatus">Stopped</span></div>
-          <div class="pump-buttons"><button class="btn btn-primary btn-sm" id="btnStartRight">Start</button><button
-              class="btn btn-danger btn-sm" id="btnStopRight">Stop</button></div>
-          <div class="speed-control"><input type="range" class="slider" id="speedRight" min="0" max="100" value="50"
-              aria-label="Right speed"><span class="speed-value" id="speedRightVal">50%</span></div>
+        <!-- Motor controls hidden for playback mode -->
+        <div style="display:none;">
+          <p class="section-label">Left Pump</p>
+          <div class="pump-card">
+            <div class="pump-header"><span class="pump-name"><span class="pump-indicator" id="pumpLeftInd"></span>Motor
+                L</span><span class="pump-status" id="pumpLeftStatus">Stopped</span></div>
+            <div class="pump-buttons"><button class="btn btn-primary btn-sm" id="btnStartLeft">Start</button><button
+                class="btn btn-danger btn-sm" id="btnStopLeft">Stop</button></div>
+            <div class="speed-control"><input type="range" class="slider" id="speedLeft" min="0" max="100" value="50"
+                aria-label="Left speed"><span class="speed-value" id="speedLeftVal">50%</span></div>
+          </div>
+          <p class="section-label">Right Pump</p>
+          <div class="pump-card">
+            <div class="pump-header"><span class="pump-name"><span class="pump-indicator" id="pumpRightInd"></span>Motor
+                R</span><span class="pump-status" id="pumpRightStatus">Stopped</span></div>
+            <div class="pump-buttons"><button class="btn btn-primary btn-sm" id="btnStartRight">Start</button><button
+                class="btn btn-danger btn-sm" id="btnStopRight">Stop</button></div>
+            <div class="speed-control"><input type="range" class="slider" id="speedRight" min="0" max="100" value="50"
+                aria-label="Right speed"><span class="speed-value" id="speedRightVal">50%</span></div>
+          </div>
         </div>
         <div class="emergency-section"><button class="btn-emergency" id="btnEmergency">⚠ Emergency Stop</button></div>
       </div>

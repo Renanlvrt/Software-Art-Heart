@@ -25,7 +25,7 @@ const SCHEMA = {
       value REAL NOT NULL,
       unit TEXT NOT NULL,
       motor_state TEXT DEFAULT 'stopped' CHECK(motor_state IN ('stopped', 'running', 'error')),
-      source TEXT DEFAULT 'simulator' CHECK(source IN ('simulator', 'playback', 'esp32', 'manual')),
+      source TEXT DEFAULT 'simulator' CHECK(source IN ('simulator', 'playback', 'replay', 'esp32', 'manual')),
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
   `,

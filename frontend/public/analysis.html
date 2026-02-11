@@ -13,6 +13,194 @@
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <link rel="stylesheet" href="/css/shared.css">
+    <style>
+        /* DVR Control Bar */
+        .dvr-panel {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .dvr-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--accent);
+            border-radius: 8px 8px 0 0;
+        }
+
+        .dvr-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .dvr-title {
+            font-family: var(--font-display);
+            font-size: 1.125rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .dvr-status {
+            font-family: var(--font-mono);
+            font-size: 0.6875rem;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 0.25rem 0.625rem;
+            border-radius: 4px;
+            background: rgba(46, 125, 74, 0.1);
+            color: var(--success);
+        }
+
+        .dvr-status.paused {
+            background: rgba(197, 132, 26, 0.1);
+            color: var(--warning);
+        }
+
+        .dvr-status.ended {
+            background: rgba(107, 107, 107, 0.1);
+            color: var(--muted-foreground);
+        }
+
+        .dvr-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .dvr-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--card);
+            cursor: pointer;
+            font-size: 1.125rem;
+            transition: all 200ms;
+            color: var(--foreground);
+        }
+
+        .dvr-btn:hover {
+            background: var(--muted);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .dvr-btn.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .dvr-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .dvr-separator {
+            width: 1px;
+            height: 24px;
+            background: var(--border);
+            margin: 0 0.25rem;
+        }
+
+        .speed-select {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--card);
+            color: var(--foreground);
+            cursor: pointer;
+            min-height: 40px;
+        }
+
+        .speed-select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .dvr-timeline {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .timeline-slider {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .timeline-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: var(--accent);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 150ms;
+        }
+
+        .timeline-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .timeline-slider::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: var(--accent);
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+
+        .timeline-label {
+            font-family: var(--font-mono);
+            font-size: 0.6875rem;
+            color: var(--muted-foreground);
+            white-space: nowrap;
+            min-width: 80px;
+            text-align: right;
+        }
+
+        /* Charts Grid — reuse analysis styles */
+        .replay-charts {
+            display: grid;
+            gap: 1rem;
+            grid-template-columns: 1fr;
+        }
+
+        @media (min-width: 1024px) {
+            .replay-charts {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
 </head>
 
 <body>
@@ -54,30 +242,76 @@
                 <h1 class="page-title">Analysis</h1>
                 <div class="page-header-right"><span class="timestamp" id="currentTime">--:--:--</span></div>
             </header>
-            <div class="section-header"><span>Last 24 Hours</span></div>
-            <div class="analysis-grid">
-                <div class="analysis-card" id="analysisPressure">
+
+            <!-- DVR Control Panel -->
+            <div class="section-header"><span>Replay Controls</span></div>
+            <div class="dvr-panel">
+                <div class="dvr-header">
+                    <span class="dvr-title">📼 Historical Replay</span>
+                    <span class="dvr-status paused" id="dvrStatus">STOPPED</span>
+                </div>
+                <div class="dvr-controls">
+                    <button class="dvr-btn" id="btnRestart" title="Restart">⏮</button>
+                    <button class="dvr-btn" id="btnPlayPause" title="Play">▶</button>
+                    <div class="dvr-separator"></div>
+                    <select class="speed-select" id="speedSelect" title="Playback Speed">
+                        <option value="1">1× Normal</option>
+                        <option value="2">2× Fast</option>
+                        <option value="5">5× Review</option>
+                        <option value="10">10× Scan</option>
+                    </select>
+                </div>
+                <div class="dvr-timeline">
+                    <input type="range" class="timeline-slider" id="timelineSlider" min="1" max="100" value="0"
+                        title="Scrub through recording">
+                    <span class="timeline-label" id="timelineLabel">0 / 100</span>
+                </div>
+            </div>
+
+            <!-- Sensor Charts -->
+            <div class="section-header"><span>Sensor Data</span></div>
+            <div class="replay-charts">
+                <div class="analysis-card">
                     <div class="analysis-header">
-                        <h2 class="analysis-title"><span class="chart-dot" style="background:#C53030;"></span>Pressure
-                        </h2><span class="trend-arrow" id="trendPressure">→</span>
+                        <h2 class="analysis-title"><span class="chart-dot" style="background:#C53030;"></span>Pressure 1
+                        </h2>
+                        <span class="trend-arrow" id="trendP1">→</span>
                     </div>
                     <div class="stats-row">
                         <div class="stat"><span class="stat-label">Current</span><span class="stat-value"
-                                id="currentPressure">--</span></div>
+                                id="currentP1">--</span></div>
                         <div class="stat"><span class="stat-label">Avg</span><span class="stat-value"
-                                id="avgPressure">--</span></div>
+                                id="avgP1">--</span></div>
                         <div class="stat"><span class="stat-label">Min</span><span class="stat-value"
-                                id="minPressure">--</span></div>
+                                id="minP1">--</span></div>
                         <div class="stat"><span class="stat-label">Max</span><span class="stat-value"
-                                id="maxPressure">--</span></div>
+                                id="maxP1">--</span></div>
                     </div>
-                    <div class="chart-body-lg"><canvas id="chartPressure"></canvas></div>
+                    <div class="chart-body-lg"><canvas id="chartP1"></canvas></div>
                 </div>
-                <div class="analysis-card" id="analysisTemp">
+                <div class="analysis-card">
+                    <div class="analysis-header">
+                        <h2 class="analysis-title"><span class="chart-dot" style="background:#3B82F6;"></span>Pressure 2
+                        </h2>
+                        <span class="trend-arrow" id="trendP2">→</span>
+                    </div>
+                    <div class="stats-row">
+                        <div class="stat"><span class="stat-label">Current</span><span class="stat-value"
+                                id="currentP2">--</span></div>
+                        <div class="stat"><span class="stat-label">Avg</span><span class="stat-value"
+                                id="avgP2">--</span></div>
+                        <div class="stat"><span class="stat-label">Min</span><span class="stat-value"
+                                id="minP2">--</span></div>
+                        <div class="stat"><span class="stat-label">Max</span><span class="stat-value"
+                                id="maxP2">--</span></div>
+                    </div>
+                    <div class="chart-body-lg"><canvas id="chartP2"></canvas></div>
+                </div>
+                <div class="analysis-card">
                     <div class="analysis-header">
                         <h2 class="analysis-title"><span class="chart-dot"
-                                style="background:#C5841A;"></span>Temperature</h2><span class="trend-arrow"
-                            id="trendTemp">→</span>
+                                style="background:#C5841A;"></span>Temperature</h2>
+                        <span class="trend-arrow" id="trendTemp">→</span>
                     </div>
                     <div class="stats-row">
                         <div class="stat"><span class="stat-label">Current</span><span class="stat-value"
@@ -91,10 +325,11 @@
                     </div>
                     <div class="chart-body-lg"><canvas id="chartTemp"></canvas></div>
                 </div>
-                <div class="analysis-card" id="analysisFlow">
+                <div class="analysis-card">
                     <div class="analysis-header">
                         <h2 class="analysis-title"><span class="chart-dot" style="background:#B8860B;"></span>Flow Rate
-                        </h2><span class="trend-arrow" id="trendFlow">→</span>
+                        </h2>
+                        <span class="trend-arrow" id="trendFlow">→</span>
                     </div>
                     <div class="stats-row">
                         <div class="stat"><span class="stat-label">Current</span><span class="stat-value"
@@ -108,57 +343,257 @@
                     </div>
                     <div class="chart-body-lg"><canvas id="chartFlow"></canvas></div>
                 </div>
-                <div class="analysis-card" id="analysisRpm">
-                    <div class="analysis-header">
-                        <h2 class="analysis-title"><span class="chart-dot" style="background:#2E7D4A;"></span>Motor
-                            Speed</h2><span class="trend-arrow" id="trendRpm">→</span>
-                    </div>
-                    <div class="stats-row">
-                        <div class="stat"><span class="stat-label">Current</span><span class="stat-value"
-                                id="currentRpm">--</span></div>
-                        <div class="stat"><span class="stat-label">Avg</span><span class="stat-value"
-                                id="avgRpm">--</span></div>
-                        <div class="stat"><span class="stat-label">Min</span><span class="stat-value"
-                                id="minRpm">--</span></div>
-                        <div class="stat"><span class="stat-label">Max</span><span class="stat-value"
-                                id="maxRpm">--</span></div>
-                    </div>
-                    <div class="chart-body-lg"><canvas id="chartRpm"></canvas></div>
-                </div>
             </div>
         </main>
     </div>
+
     <script src="/js/shared.js"></script>
     <script>
-        const charts = {}, chartData = { pressure: [], temp: [], flow: [], rpm: [] };
-        const chartCfg = { pressure: { color: '#C53030', unit: 'mmHg' }, temp: { color: '#C5841A', unit: '°C' }, flow: { color: '#B8860B', unit: 'L/min' }, rpm: { color: '#2E7D4A', unit: 'RPM' } };
-        function createChart(id, color) {
-            const ctx = document.getElementById(id)?.getContext('2d'); if (!ctx) return null;
-            return new Chart(ctx, { type: 'line', data: { labels: [], datasets: [{ data: [], borderColor: color, backgroundColor: color + '15', borderWidth: 2, fill: true, tension: 0.3, pointRadius: 0 }] }, options: { responsive: true, maintainAspectRatio: false, animation: { duration: 0 }, plugins: { legend: { display: false } }, scales: { x: { display: true, grid: { color: '#E8E4DF' }, ticks: { color: '#6B6B6B', font: { size: 10 }, maxTicksLimit: 8 } }, y: { display: true, grid: { color: '#E8E4DF' }, ticks: { color: '#6B6B6B', font: { size: 10 } } } } } });
+        // ========================================================
+        // Replay Socket — separate /replay namespace
+        // ========================================================
+        const replaySocket = io('/replay', { reconnection: true, reconnectionDelay: 1000 });
+
+        // ========================================================
+        // Charts — 4 charts, 50-point sliding window
+        // ========================================================
+        const MAX_POINTS = 15;
+        const charts = {};
+        const chartData = {
+            p1: { labels: [], data: [] },
+            p2: { labels: [], data: [] },
+            temp: { labels: [], data: [] },
+            flow: { labels: [], data: [] }
+        };
+        const chartCfg = {
+            p1: { color: '#C53030', canvasId: 'chartP1' },
+            p2: { color: '#3B82F6', canvasId: 'chartP2' },
+            temp: { color: '#C5841A', canvasId: 'chartTemp' },
+            flow: { color: '#B8860B', canvasId: 'chartFlow' }
+        };
+
+        function createChart(canvasId, color) {
+            const ctx = document.getElementById(canvasId)?.getContext('2d');
+            if (!ctx) return null;
+            return new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [], borderColor: color, backgroundColor: color + '15',
+                        borderWidth: 2, fill: true, tension: 0.3, pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    animation: { duration: 0 },
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { display: true, grid: { color: '#E8E4DF' }, ticks: { color: '#6B6B6B', font: { size: 10 }, maxTicksLimit: 8 } },
+                        y: { display: true, grid: { color: '#E8E4DF' }, ticks: { color: '#6B6B6B', font: { size: 10 } } }
+                    }
+                }
+            });
         }
-        function initCharts() { Object.keys(chartCfg).forEach(k => { charts[k] = createChart('chart' + k.charAt(0).toUpperCase() + k.slice(1), chartCfg[k].color); }); }
-        function updateStats(type, data) {
+
+        function initCharts() {
+            Object.keys(chartCfg).forEach(k => {
+                charts[k] = createChart(chartCfg[k].canvasId, chartCfg[k].color);
+            });
+        }
+
+        function clearCharts() {
+            Object.keys(chartData).forEach(k => {
+                chartData[k].labels = [];
+                chartData[k].data = [];
+            });
+            refreshCharts();
+        }
+
+        function refreshCharts() {
+            Object.keys(charts).forEach(k => {
+                if (!charts[k]) return;
+                charts[k].data.labels = chartData[k].labels;
+                charts[k].data.datasets[0].data = chartData[k].data;
+                charts[k].update('none');
+            });
+        }
+
+        // ========================================================
+        // Stats
+        // ========================================================
+        function updateStats(key, data) {
             if (data.length === 0) return;
-            const vals = data.map(d => d.value);
-            const current = vals[vals.length - 1], avg = vals.reduce((a, b) => a + b, 0) / vals.length, min = Math.min(...vals), max = Math.max(...vals);
-            document.getElementById('current' + type.charAt(0).toUpperCase() + type.slice(1)).textContent = current.toFixed(1);
-            document.getElementById('avg' + type.charAt(0).toUpperCase() + type.slice(1)).textContent = avg.toFixed(1);
-            document.getElementById('min' + type.charAt(0).toUpperCase() + type.slice(1)).textContent = min.toFixed(1);
-            document.getElementById('max' + type.charAt(0).toUpperCase() + type.slice(1)).textContent = max.toFixed(1);
-            const trend = vals.length > 5 ? (vals[vals.length - 1] > vals[vals.length - 5] ? '↑' : vals[vals.length - 1] < vals[vals.length - 5] ? '↓' : '→') : '→';
-            document.getElementById('trend' + type.charAt(0).toUpperCase() + type.slice(1)).textContent = trend;
+            const vals = data;
+            const current = vals[vals.length - 1];
+            const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+            const min = Math.min(...vals);
+            const max = Math.max(...vals);
+
+            const idMap = { p1: 'P1', p2: 'P2', temp: 'Temp', flow: 'Flow' };
+            const suffix = idMap[key];
+            const el = (id) => document.getElementById(id);
+
+            if (el('current' + suffix)) el('current' + suffix).textContent = current.toFixed(1);
+            if (el('avg' + suffix)) el('avg' + suffix).textContent = avg.toFixed(1);
+            if (el('min' + suffix)) el('min' + suffix).textContent = min.toFixed(1);
+            if (el('max' + suffix)) el('max' + suffix).textContent = max.toFixed(1);
+
+            // Trend arrow
+            const trend = vals.length > 5
+                ? (vals[vals.length - 1] > vals[vals.length - 5] ? '↑' : vals[vals.length - 1] < vals[vals.length - 5] ? '↓' : '→')
+                : '→';
+            if (el('trend' + suffix)) el('trend' + suffix).textContent = trend;
         }
-        function processReading(r) {
-            const typeMap = { pressure: 'pressure', temperature: 'temp', flow_rate: 'flow', motor_speed: 'rpm' };
-            const t = typeMap[r.sensor_type]; if (!t) return;
-            chartData[t].push({ time: new Date(r.timestamp).toLocaleTimeString(), value: r.value });
-            if (chartData[t].length > 1440) chartData[t].shift();
-            if (charts[t]) { charts[t].data.labels = chartData[t].map(d => d.time); charts[t].data.datasets[0].data = chartData[t].map(d => d.value); charts[t].update('none'); }
-            updateStats(t, chartData[t]);
+
+        // ========================================================
+        // Process replay data
+        // ========================================================
+        const sensorMap = { pressure: 'p1', pressure2: 'p2', temperature: 'temp', flow_rate: 'flow' };
+
+        function processReadings(readings) {
+            const time = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            readings.forEach(r => {
+                const k = sensorMap[r.sensor_type];
+                if (!k) return;
+                chartData[k].labels.push(time);
+                chartData[k].data.push(r.value);
+                if (chartData[k].labels.length > MAX_POINTS) {
+                    chartData[k].labels.shift();
+                    chartData[k].data.shift();
+                }
+            });
+            refreshCharts();
+            Object.keys(chartData).forEach(k => updateStats(k, chartData[k].data));
         }
-        socket.on('reading', r => processReading(r));
-        socket.on('readings', rs => { if (Array.isArray(rs)) rs.forEach(r => processReading(r)); });
-        document.addEventListener('DOMContentLoaded', () => { initCharts(); setupMenu(); updateTime(); setInterval(updateTime, 1000); });
+
+        function processSeekResult(result) {
+            clearCharts();
+            // Load context data into charts
+            result.contextReadings.forEach(readingGroup => {
+                const time = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                readingGroup.forEach(r => {
+                    const k = sensorMap[r.sensor_type];
+                    if (!k) return;
+                    chartData[k].labels.push('R' + r.rowid);
+                    chartData[k].data.push(r.value);
+                });
+            });
+            // Trim to max
+            Object.keys(chartData).forEach(k => {
+                while (chartData[k].labels.length > MAX_POINTS) {
+                    chartData[k].labels.shift();
+                    chartData[k].data.shift();
+                }
+            });
+            refreshCharts();
+            Object.keys(chartData).forEach(k => updateStats(k, chartData[k].data));
+        }
+
+        // ========================================================
+        // DVR Controls
+        // ========================================================
+        let isPlaying = false;
+        let totalRows = 100;
+        let currentCursor = 0;
+        let isSeeking = false;
+
+        const btnPlayPause = document.getElementById('btnPlayPause');
+        const btnRestart = document.getElementById('btnRestart');
+        const speedSelect = document.getElementById('speedSelect');
+        const timelineSlider = document.getElementById('timelineSlider');
+        const timelineLabel = document.getElementById('timelineLabel');
+        const dvrStatus = document.getElementById('dvrStatus');
+
+        btnPlayPause.onclick = () => {
+            if (isPlaying) {
+                replaySocket.emit('replay_control', { action: 'pause' });
+            } else {
+                replaySocket.emit('replay_control', { action: 'play' });
+            }
+        };
+
+        btnRestart.onclick = () => {
+            clearCharts();
+            replaySocket.emit('replay_control', { action: 'restart' });
+        };
+
+        speedSelect.onchange = (e) => {
+            replaySocket.emit('replay_control', { action: 'set_speed', speed: parseInt(e.target.value) });
+        };
+
+        // Scrub slider
+        timelineSlider.oninput = () => { isSeeking = true; };
+        timelineSlider.onchange = (e) => {
+            const rowid = parseInt(e.target.value);
+            replaySocket.emit('replay_control', { action: 'seek', rowid, contextSize: MAX_POINTS });
+            isSeeking = false;
+        };
+
+        // ========================================================
+        // Socket event handlers
+        // ========================================================
+        replaySocket.on('replay_state', (state) => {
+            isPlaying = state.isPlaying;
+            totalRows = state.totalRows || totalRows;
+            currentCursor = state.cursor || 0;
+
+            // Update UI
+            btnPlayPause.textContent = isPlaying ? '⏸' : '▶';
+            btnPlayPause.title = isPlaying ? 'Pause' : 'Play';
+            btnPlayPause.classList.toggle('active', isPlaying);
+
+            timelineSlider.max = totalRows;
+            if (!isSeeking) {
+                timelineSlider.value = currentCursor;
+            }
+            timelineLabel.textContent = `${currentCursor} / ${totalRows}`;
+
+            if (isPlaying) {
+                dvrStatus.textContent = 'PLAYING';
+                dvrStatus.className = 'dvr-status';
+            } else if (currentCursor >= totalRows && totalRows > 0) {
+                dvrStatus.textContent = 'ENDED';
+                dvrStatus.className = 'dvr-status ended';
+            } else {
+                dvrStatus.textContent = 'PAUSED';
+                dvrStatus.className = 'dvr-status paused';
+            }
+        });
+
+        replaySocket.on('replay_data', (data) => {
+            processReadings(data.readings);
+            currentCursor = data.cursor;
+            if (!isSeeking) {
+                timelineSlider.value = currentCursor;
+            }
+            timelineLabel.textContent = `${currentCursor} / ${data.totalRows}`;
+        });
+
+        replaySocket.on('replay_seek_result', (result) => {
+            processSeekResult(result);
+            currentCursor = result.cursor;
+            timelineSlider.value = currentCursor;
+            timelineLabel.textContent = `${currentCursor} / ${result.totalRows}`;
+        });
+
+        replaySocket.on('replay_end', (data) => {
+            isPlaying = false;
+            btnPlayPause.textContent = '▶';
+            btnPlayPause.classList.remove('active');
+            dvrStatus.textContent = 'ENDED';
+            dvrStatus.className = 'dvr-status ended';
+        });
+
+        // ========================================================
+        // Init
+        // ========================================================
+        document.addEventListener('DOMContentLoaded', () => {
+            initCharts();
+            setupMenu();
+            updateTime();
+            setInterval(updateTime, 1000);
+        });
     </script>
 </body>
 

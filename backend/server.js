@@ -154,6 +154,63 @@ io.on('connection', (socket) => {
 app.set('io', io);
 
 // ============================================================
+// Replay Namespace (Analysis Page — independent of live feed)
+// ============================================================
+
+const replay = require('./services/replay');
+replay.initialize();
+
+const replayNs = io.of('/replay');
+replayNs.on('connection', (socket) => {
+    console.log(`[Replay] Client connected: ${socket.id}`);
+
+    // Send current replay state
+    socket.emit('replay_state', replay.getState());
+
+    // Handle replay control commands
+    socket.on('replay_control', (cmd) => {
+        const emitFn = (event, data) => replayNs.emit(event, data);
+
+        switch (cmd.action) {
+            case 'play':
+                replay.play(emitFn);
+                replayNs.emit('replay_state', replay.getState());
+                break;
+
+            case 'pause':
+                replay.pause();
+                replayNs.emit('replay_state', replay.getState());
+                break;
+
+            case 'restart':
+                replay.restart(emitFn);
+                replayNs.emit('replay_state', replay.getState());
+                break;
+
+            case 'seek': {
+                const result = replay.seek(cmd.rowid || 1, cmd.contextSize || 50);
+                socket.emit('replay_seek_result', result);
+                replayNs.emit('replay_state', replay.getState());
+                break;
+            }
+
+            case 'set_speed': {
+                const speedResult = replay.setSpeed(cmd.speed || 1);
+                replayNs.emit('replay_state', { ...replay.getState(), ...speedResult });
+                break;
+            }
+
+            default:
+                socket.emit('replay_error', { message: `Unknown action: ${cmd.action}` });
+        }
+    });
+
+    socket.on('disconnect', () => {
+        console.log(`[Replay] Client disconnected: ${socket.id}`);
+    });
+});
+
+// ============================================================
 // Hardware Engine (Simulator or Playback)
 // ============================================================
 
@@ -232,6 +289,7 @@ process.on('SIGINT', () => {
     console.log('\n[Server] Shutting down gracefully...');
     simulator.stop();
     playback.stop();
+    replay.close();
     db.close();
     httpServer.close(() => {
         console.log('[Server] Closed');
@@ -243,6 +301,7 @@ process.on('SIGTERM', () => {
     console.log('\n[Server] Received SIGTERM');
     simulator.stop();
     playback.stop();
+    replay.close();
     db.close();
     httpServer.close(() => {
         process.exit(0);
