@@ -608,14 +608,14 @@
 
     @media (min-width: 768px) {
       .metrics-grid {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(4, 1fr);
         gap: 1rem;
       }
     }
 
     @media (min-width: 1024px) {
       .metrics-grid {
-        grid-template-columns: repeat(5, 1fr);
+        grid-template-columns: repeat(4, 1fr);
       }
     }
 
@@ -1172,47 +1172,42 @@
 
       <div class="section-header"><span>Live Metrics</span></div>
       <section class="metrics-grid">
+        <div class="metric-card" id="cardPressure1"><span class="metric-status" id="statusPressure1">OK</span>
+          <div class="metric-label">Pressure 1</div>
+          <div class="metric-value" id="valPressure1">--</div>
+          <div class="metric-unit">mmHg</div>
+        </div>
+        <div class="metric-card" id="cardPressure2"><span class="metric-status" id="statusPressure2">OK</span>
+          <div class="metric-label">Pressure 2</div>
+          <div class="metric-value" id="valPressure2">--</div>
+          <div class="metric-unit">mmHg</div>
+        </div>
         <div class="metric-card" id="cardTemp"><span class="metric-status" id="statusTemp">OK</span>
           <div class="metric-label">Temperature</div>
           <div class="metric-value" id="valTemp">--</div>
           <div class="metric-unit">°C</div>
-        </div>
-        <div class="metric-card" id="cardPressure"><span class="metric-status" id="statusPressure">OK</span>
-          <div class="metric-label">Pressure</div>
-          <div class="metric-value" id="valPressure">--</div>
-          <div class="metric-unit">mmHg</div>
         </div>
         <div class="metric-card" id="cardFlow"><span class="metric-status" id="statusFlow">OK</span>
           <div class="metric-label">Flow Rate</div>
           <div class="metric-value" id="valFlow">--</div>
           <div class="metric-unit">L/min</div>
         </div>
-        <div class="metric-card" id="cardRpm"><span class="metric-status" id="statusRpm">OK</span>
-          <div class="metric-label">Motor Speed</div>
-          <div class="metric-value" id="valRpm">--</div>
-          <div class="metric-unit">RPM</div>
-        </div>
-        <div class="metric-card" id="cardPower"><span class="metric-status" id="statusPower">OK</span>
-          <div class="metric-label">Power</div>
-          <div class="metric-value" id="valPower">--</div>
-          <div class="metric-unit">W</div>
-        </div>
       </section>
 
       <div class="section-header"><span>Real-Time Data</span></div>
       <!-- Mobile: Tab selector -->
       <div class="chart-tabs" role="tablist">
-        <button class="chart-tab active" data-chart="pressure" role="tab" aria-selected="true">Pressure</button>
+        <button class="chart-tab active" data-chart="pressure1" role="tab" aria-selected="true">Pressure 1</button>
+        <button class="chart-tab" data-chart="pressure2" role="tab" aria-selected="false">Pressure 2</button>
         <button class="chart-tab" data-chart="temp" role="tab" aria-selected="false">Temperature</button>
         <button class="chart-tab" data-chart="flow" role="tab" aria-selected="false">Flow Rate</button>
-        <button class="chart-tab" data-chart="rpm" role="tab" aria-selected="false">Motor Speed</button>
       </div>
       <!-- Mobile: Single chart -->
       <div class="chart-single" id="chartSingle">
         <div class="chart-card">
           <div class="chart-header">
             <h2 class="chart-title"><span class="chart-dot" id="singleChartDot" style="background:#C53030;"></span><span
-                id="singleChartTitle">Pressure</span></h2>
+                id="singleChartTitle">Pressure 1</span></h2>
           </div>
           <div class="chart-body"><canvas id="chartSingleCanvas" class="chart-canvas"></canvas></div>
         </div>
@@ -1221,9 +1216,15 @@
       <section class="charts-grid">
         <div class="chart-card">
           <div class="chart-header">
-            <h2 class="chart-title"><span class="chart-dot" style="background:#C53030;"></span>Pressure</h2>
+            <h2 class="chart-title"><span class="chart-dot" style="background:#C53030;"></span>Pressure 1</h2>
           </div>
-          <div class="chart-body"><canvas id="chartPressure" class="chart-canvas"></canvas></div>
+          <div class="chart-body"><canvas id="chartPressure1" class="chart-canvas"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <h2 class="chart-title"><span class="chart-dot" style="background:#3B82F6;"></span>Pressure 2</h2>
+          </div>
+          <div class="chart-body"><canvas id="chartPressure2" class="chart-canvas"></canvas></div>
         </div>
         <div class="chart-card">
           <div class="chart-header">
@@ -1236,12 +1237,6 @@
             <h2 class="chart-title"><span class="chart-dot" style="background:#B8860B;"></span>Flow Rate</h2>
           </div>
           <div class="chart-body"><canvas id="chartFlow" class="chart-canvas"></canvas></div>
-        </div>
-        <div class="chart-card">
-          <div class="chart-header">
-            <h2 class="chart-title"><span class="chart-dot" style="background:#2E7D4A;"></span>Motor Speed</h2>
-          </div>
-          <div class="chart-body"><canvas id="chartRpm" class="chart-canvas"></canvas></div>
         </div>
       </section>
 
@@ -1257,11 +1252,10 @@
             <thead>
               <tr>
                 <th>Time</th>
+                <th>Pressure 1</th>
+                <th>Pressure 2</th>
                 <th>Temp</th>
-                <th>Pressure</th>
                 <th>Flow</th>
-                <th>RPM</th>
-                <th>Power</th>
               </tr>
             </thead>
             <tbody id="tableBody"></tbody>
@@ -1333,21 +1327,24 @@
     // Thresholds
     const THRESH = { temperature: { warn: 38.5, crit: 40 }, pressure: { warnHigh: 150, critHigh: 180 }, flow_rate: { warnLow: 2, critLow: 1 } };
     const latestReadings = {};
+    const MAX_CHART_POINTS = 40; // 10-second rolling window at 500ms tick (2Hz)
+
     function processReadings(readings) {
       if (!Array.isArray(readings)) readings = [readings];
       readings.forEach(r => { latestReadings[r.sensor_type] = r; });
       updateMetrics(); updateCharts(); addTableRow(); updateTimestamp();
     }
     function updateMetrics() {
-      const t = latestReadings.temperature?.value, p = latestReadings.pressure?.value, f = latestReadings.flow_rate?.value, r = latestReadings.motor_speed?.value, w = latestReadings.power?.value;
+      const p1 = latestReadings.pressure?.value, p2 = latestReadings.pressure2?.value;
+      const t = latestReadings.temperature?.value, f = latestReadings.flow_rate?.value;
+      if (p1 !== undefined) { document.getElementById('valPressure1').textContent = p1.toFixed(1); setStatus('Pressure1', p1 >= THRESH.pressure.critHigh ? 'critical' : p1 >= THRESH.pressure.warnHigh ? 'warning' : 'ok'); }
+      if (p2 !== undefined) { document.getElementById('valPressure2').textContent = p2.toFixed(1); setStatus('Pressure2', p2 >= THRESH.pressure.critHigh ? 'critical' : p2 >= THRESH.pressure.warnHigh ? 'warning' : 'ok'); }
       if (t !== undefined) { document.getElementById('valTemp').textContent = t.toFixed(1); setStatus('Temp', t >= THRESH.temperature.crit ? 'critical' : t >= THRESH.temperature.warn ? 'warning' : 'ok'); }
-      if (p !== undefined) { document.getElementById('valPressure').textContent = Math.round(p); setStatus('Pressure', p >= THRESH.pressure.critHigh ? 'critical' : p >= THRESH.pressure.warnHigh ? 'warning' : 'ok'); }
       if (f !== undefined) { document.getElementById('valFlow').textContent = f.toFixed(2); setStatus('Flow', (f > 0 && f < THRESH.flow_rate.critLow) ? 'critical' : (f > 0 && f < THRESH.flow_rate.warnLow) ? 'warning' : 'ok'); }
-      if (r !== undefined) { document.getElementById('valRpm').textContent = Math.round(r); setStatus('Rpm', 'ok'); }
-      if (w !== undefined) { document.getElementById('valPower').textContent = w.toFixed(1); setStatus('Power', 'ok'); }
     }
     function setStatus(n, s) {
       const c = document.getElementById('card' + n), b = document.getElementById('status' + n);
+      if (!c || !b) return;
       c.classList.remove('warning', 'critical'); b.classList.remove('warning', 'critical');
       b.textContent = s.toUpperCase(); if (s !== 'ok') { c.classList.add(s); b.classList.add(s); }
     }
@@ -1358,15 +1355,42 @@
     }
     function updateTimestamp() { const e = document.getElementById('currentTime'); if (e) e.textContent = new Date().toLocaleTimeString(); }
 
-    // Charts
-    const charts = {}, chartData = { pressure: { labels: [], data: [] }, temp: { labels: [], data: [] }, flow: { labels: [], data: [] }, rpm: { labels: [], data: [] } };
-    const chartCfg = { pressure: { color: '#C53030', title: 'Pressure' }, temp: { color: '#C5841A', title: 'Temperature' }, flow: { color: '#B8860B', title: 'Flow Rate' }, rpm: { color: '#2E7D4A', title: 'Motor Speed' } };
-    let currentMobileChart = 'pressure', mobileChartInstance = null;
+    // Charts — 4 separate charts, 10-second rolling window (100 points at 10Hz)
+    const charts = {};
+    const chartData = {
+      pressure1: { labels: [], data: [] },
+      pressure2: { labels: [], data: [] },
+      temp: { labels: [], data: [] },
+      flow: { labels: [], data: [] }
+    };
+    const chartCfg = {
+      pressure1: { color: '#C53030', title: 'Pressure 1', canvasId: 'chartPressure1' },
+      pressure2: { color: '#3B82F6', title: 'Pressure 2', canvasId: 'chartPressure2' },
+      temp: { color: '#C5841A', title: 'Temperature', canvasId: 'chartTemp' },
+      flow: { color: '#B8860B', title: 'Flow Rate', canvasId: 'chartFlow' }
+    };
+    let currentMobileChart = 'pressure1', mobileChartInstance = null;
+
     function createChart(ctx, color) {
-      return new Chart(ctx, { type: 'line', data: { labels: [], datasets: [{ data: [], borderColor: color, backgroundColor: color + '15', borderWidth: 2, fill: true, tension: 0.3, pointRadius: 0 }] }, options: { responsive: true, maintainAspectRatio: false, animation: { duration: 0 }, plugins: { legend: { display: false } }, scales: { x: { display: true, grid: { color: '#E8E4DF' }, ticks: { color: '#6B6B6B', font: { size: 10 }, maxTicksLimit: 5 } }, y: { display: true, grid: { color: '#E8E4DF' }, ticks: { color: '#6B6B6B', font: { size: 10 } } } } } });
+      return new Chart(ctx, {
+        type: 'line',
+        data: { labels: [], datasets: [{ data: [], borderColor: color, backgroundColor: color + '15', borderWidth: 2, fill: true, tension: 0.3, pointRadius: 0 }] },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          animation: { duration: 0 },
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { display: true, grid: { color: '#E8E4DF' }, ticks: { color: '#6B6B6B', font: { size: 10 }, maxTicksLimit: 5 } },
+            y: { display: true, grid: { color: '#E8E4DF' }, ticks: { color: '#6B6B6B', font: { size: 10 } } }
+          }
+        }
+      });
     }
     function initCharts() {
-      ['pressure', 'temp', 'flow', 'rpm'].forEach(k => { const el = document.getElementById('chart' + k.charAt(0).toUpperCase() + k.slice(1)); if (el) charts[k] = createChart(el.getContext('2d'), chartCfg[k].color); });
+      Object.keys(chartCfg).forEach(k => {
+        const el = document.getElementById(chartCfg[k].canvasId);
+        if (el) charts[k] = createChart(el.getContext('2d'), chartCfg[k].color);
+      });
       initMobileChart();
     }
     function initMobileChart() {
@@ -1375,12 +1399,36 @@
       mobileChartInstance = createChart(canvas.getContext('2d'), chartCfg[currentMobileChart].color);
       document.getElementById('singleChartTitle').textContent = chartCfg[currentMobileChart].title;
       document.getElementById('singleChartDot').style.background = chartCfg[currentMobileChart].color;
-      if (chartData[currentMobileChart]) { mobileChartInstance.data.labels = chartData[currentMobileChart].labels; mobileChartInstance.data.datasets[0].data = chartData[currentMobileChart].data; mobileChartInstance.update('none'); }
+      if (chartData[currentMobileChart]) {
+        mobileChartInstance.data.labels = chartData[currentMobileChart].labels;
+        mobileChartInstance.data.datasets[0].data = chartData[currentMobileChart].data;
+        mobileChartInstance.update('none');
+      }
     }
     function updateCharts() {
-      const time = new Date().toLocaleTimeString(), vals = { pressure: latestReadings.pressure?.value || 0, temp: latestReadings.temperature?.value || 0, flow: latestReadings.flow_rate?.value || 0, rpm: latestReadings.motor_speed?.value || 0 };
-      Object.keys(chartData).forEach(k => { chartData[k].labels.push(time); chartData[k].data.push(vals[k]); if (chartData[k].labels.length > 60) { chartData[k].labels.shift(); chartData[k].data.shift(); } if (charts[k]) { charts[k].data.labels = chartData[k].labels; charts[k].data.datasets[0].data = chartData[k].data; charts[k].update('none'); } });
-      if (mobileChartInstance && chartData[currentMobileChart]) { mobileChartInstance.data.labels = chartData[currentMobileChart].labels; mobileChartInstance.data.datasets[0].data = chartData[currentMobileChart].data; mobileChartInstance.update('none'); }
+      const time = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 1 });
+      const vals = {
+        pressure1: latestReadings.pressure?.value || 0,
+        pressure2: latestReadings.pressure2?.value || 0,
+        temp: latestReadings.temperature?.value || 0,
+        flow: latestReadings.flow_rate?.value || 0
+      };
+      Object.keys(chartData).forEach(k => {
+        chartData[k].labels.push(time);
+        chartData[k].data.push(vals[k]);
+        // 10-second rolling window
+        if (chartData[k].labels.length > MAX_CHART_POINTS) { chartData[k].labels.shift(); chartData[k].data.shift(); }
+        if (charts[k]) {
+          charts[k].data.labels = chartData[k].labels;
+          charts[k].data.datasets[0].data = chartData[k].data;
+          charts[k].update('none');
+        }
+      });
+      if (mobileChartInstance && chartData[currentMobileChart]) {
+        mobileChartInstance.data.labels = chartData[currentMobileChart].labels;
+        mobileChartInstance.data.datasets[0].data = chartData[currentMobileChart].data;
+        mobileChartInstance.update('none');
+      }
     }
     document.querySelectorAll('.chart-tab').forEach(tab => {
       tab.addEventListener('click', () => {
@@ -1393,10 +1441,16 @@
     // Table
     const tableRows = [];
     function addTableRow() {
-      tableRows.unshift({ time: new Date().toLocaleTimeString(), temp: latestReadings.temperature?.value?.toFixed(1) || '--', pressure: latestReadings.pressure?.value ? Math.round(latestReadings.pressure.value) : '--', flow: latestReadings.flow_rate?.value?.toFixed(2) || '--', rpm: latestReadings.motor_speed?.value ? Math.round(latestReadings.motor_speed.value) : '--', power: latestReadings.power?.value?.toFixed(1) || '--' });
+      tableRows.unshift({
+        time: new Date().toLocaleTimeString(),
+        p1: latestReadings.pressure?.value?.toFixed(1) || '--',
+        p2: latestReadings.pressure2?.value?.toFixed(1) || '--',
+        temp: latestReadings.temperature?.value?.toFixed(1) || '--',
+        flow: latestReadings.flow_rate?.value?.toFixed(2) || '--'
+      });
       if (tableRows.length > 50) tableRows.pop(); renderTable();
     }
-    function renderTable() { document.getElementById('tableBody').innerHTML = tableRows.slice(0, 15).map(d => `<tr><td>${d.time}</td><td class="val-temp">${d.temp}</td><td class="val-pressure">${d.pressure}</td><td class="val-flow">${d.flow}</td><td class="val-rpm">${d.rpm}</td><td>${d.power}</td></tr>`).join(''); }
+    function renderTable() { document.getElementById('tableBody').innerHTML = tableRows.slice(0, 15).map(d => `<tr><td>${d.time}</td><td class="val-pressure">${d.p1}</td><td class="val-pressure">${d.p2}</td><td class="val-temp">${d.temp}</td><td class="val-flow">${d.flow}</td></tr>`).join(''); }
 
     // Alerts
     const activeAlerts = new Set();
@@ -1427,7 +1481,7 @@
         if (emergency) emergency.onclick = sendEmergencyStop;
       });
       document.getElementById('btnExport').onclick = () => {
-        const csv = ['Time,Temp,Pressure,Flow,RPM,Power', ...tableRows.map(d => `${d.time},${d.temp},${d.pressure},${d.flow},${d.rpm},${d.power}`)].join('\n');
+        const csv = ['Time,Pressure1,Pressure2,Temp,Flow', ...tableRows.map(d => `${d.time},${d.p1},${d.p2},${d.temp},${d.flow}`)].join('\n');
         const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'artheart_' + new Date().toISOString().slice(0, 10) + '.csv'; a.click();
       };
       document.getElementById('btnClear').onclick = () => { tableRows.length = 0; renderTable(); };

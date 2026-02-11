@@ -29,6 +29,8 @@ const controlRoutes = require('./api/control');
 
 // Hardware
 const simulator = require('./hardware/simulator');
+const playback = require('./hardware/playback');
+const hardwareConfig = require('./hardware/config.json');
 
 // Configuration
 const PORT = process.env.PORT || 4000;
@@ -152,19 +154,25 @@ io.on('connection', (socket) => {
 app.set('io', io);
 
 // ============================================================
-// Hardware Simulator
+// Hardware Engine (Simulator or Playback)
 // ============================================================
 
-if (HARDWARE_MODE === 'simulator') {
-    // Start simulator and broadcast readings
-    simulator.start((reading) => {
-        // Store in database
-        db.insertReading(reading);
+// Common callback for any data engine
+function onReading(reading) {
+    // Store in database
+    db.insertReading(reading);
 
-        // Broadcast to all connected clients
-        io.emit('reading', reading);
-    });
+    // Broadcast to all connected clients
+    io.emit('reading', reading);
+}
 
+const engineMode = hardwareConfig.mode || 'simulator';
+
+if (engineMode === 'playback') {
+    playback.start(onReading);
+    console.log('[Hardware] Playback engine started');
+} else {
+    simulator.start(onReading);
     console.log('[Hardware] Simulator started');
 }
 
@@ -223,6 +231,7 @@ function startServer() {
 process.on('SIGINT', () => {
     console.log('\n[Server] Shutting down gracefully...');
     simulator.stop();
+    playback.stop();
     db.close();
     httpServer.close(() => {
         console.log('[Server] Closed');
@@ -233,6 +242,7 @@ process.on('SIGINT', () => {
 process.on('SIGTERM', () => {
     console.log('\n[Server] Received SIGTERM');
     simulator.stop();
+    playback.stop();
     db.close();
     httpServer.close(() => {
         process.exit(0);

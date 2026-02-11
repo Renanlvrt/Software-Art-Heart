@@ -1,4 +1,9 @@
 {
+    "mode": "playback",
+    "playback": {
+        "db_path": "../database/demoTable.db",
+        "tick_ms": 1000
+    },
     "interval_ms": 1000,
     "sensors": {
         "temperature": {

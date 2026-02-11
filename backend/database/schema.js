@@ -13,28 +13,28 @@
  * SQL statements for creating tables
  */
 const SCHEMA = {
-    /**
-     * Sensor readings table
-     * Stores all sensor data with timestamps
-     */
-    sensor_readings: `
+  /**
+   * Sensor readings table
+   * Stores all sensor data with timestamps
+   */
+  sensor_readings: `
     CREATE TABLE IF NOT EXISTS sensor_readings (
       id TEXT PRIMARY KEY,
       timestamp TEXT NOT NULL,
-      sensor_type TEXT NOT NULL CHECK(sensor_type IN ('temperature', 'pressure', 'flow_rate', 'motor_speed', 'power')),
+      sensor_type TEXT NOT NULL CHECK(sensor_type IN ('temperature', 'pressure', 'pressure2', 'flow_rate', 'motor_speed', 'power')),
       value REAL NOT NULL,
       unit TEXT NOT NULL,
       motor_state TEXT DEFAULT 'stopped' CHECK(motor_state IN ('stopped', 'running', 'error')),
-      source TEXT DEFAULT 'simulator' CHECK(source IN ('simulator', 'esp32', 'manual')),
+      source TEXT DEFAULT 'simulator' CHECK(source IN ('simulator', 'playback', 'esp32', 'manual')),
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
   `,
 
-    /**
-     * Control commands table
-     * Audit log of all commands sent to hardware
-     */
-    control_commands: `
+  /**
+   * Control commands table
+   * Audit log of all commands sent to hardware
+   */
+  control_commands: `
     CREATE TABLE IF NOT EXISTS control_commands (
       id TEXT PRIMARY KEY,
       timestamp TEXT NOT NULL,
@@ -47,11 +47,11 @@ const SCHEMA = {
     )
   `,
 
-    /**
-     * System state table
-     * Stores latest state for quick retrieval
-     */
-    system_state: `
+  /**
+   * System state table
+   * Stores latest state for quick retrieval
+   */
+  system_state: `
     CREATE TABLE IF NOT EXISTS system_state (
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL,
@@ -59,27 +59,27 @@ const SCHEMA = {
     )
   `,
 
-    /**
-     * Indexes for performance
-     */
-    indexes: [
-        'CREATE INDEX IF NOT EXISTS idx_readings_timestamp ON sensor_readings(timestamp)',
-        'CREATE INDEX IF NOT EXISTS idx_readings_sensor_type ON sensor_readings(sensor_type)',
-        'CREATE INDEX IF NOT EXISTS idx_readings_composite ON sensor_readings(sensor_type, timestamp)',
-        'CREATE INDEX IF NOT EXISTS idx_commands_timestamp ON control_commands(timestamp)',
-        'CREATE INDEX IF NOT EXISTS idx_commands_status ON control_commands(status)'
-    ]
+  /**
+   * Indexes for performance
+   */
+  indexes: [
+    'CREATE INDEX IF NOT EXISTS idx_readings_timestamp ON sensor_readings(timestamp)',
+    'CREATE INDEX IF NOT EXISTS idx_readings_sensor_type ON sensor_readings(sensor_type)',
+    'CREATE INDEX IF NOT EXISTS idx_readings_composite ON sensor_readings(sensor_type, timestamp)',
+    'CREATE INDEX IF NOT EXISTS idx_commands_timestamp ON control_commands(timestamp)',
+    'CREATE INDEX IF NOT EXISTS idx_commands_status ON control_commands(status)'
+  ]
 };
 
 /**
  * Initial system state values
  */
 const INITIAL_STATE = [
-    { key: 'motor_state', value: 'stopped' },
-    { key: 'motor_speed', value: '0' },
-    { key: 'motor_target_speed', value: '0' },
-    { key: 'hardware_mode', value: 'simulator' },
-    { key: 'connection_status', value: 'disconnected' }
+  { key: 'motor_state', value: 'stopped' },
+  { key: 'motor_speed', value: '0' },
+  { key: 'motor_target_speed', value: '0' },
+  { key: 'hardware_mode', value: 'simulator' },
+  { key: 'connection_status', value: 'disconnected' }
 ];
 
 /**
@@ -87,11 +87,11 @@ const INITIAL_STATE = [
  * @returns {string[]} Array of SQL CREATE TABLE statements
  */
 function getTableStatements() {
-    return [
-        SCHEMA.sensor_readings,
-        SCHEMA.control_commands,
-        SCHEMA.system_state
-    ];
+  return [
+    SCHEMA.sensor_readings,
+    SCHEMA.control_commands,
+    SCHEMA.system_state
+  ];
 }
 
 /**
@@ -99,7 +99,7 @@ function getTableStatements() {
  * @returns {string[]} Array of SQL CREATE INDEX statements
  */
 function getIndexStatements() {
-    return SCHEMA.indexes;
+  return SCHEMA.indexes;
 }
 
 /**
@@ -107,13 +107,13 @@ function getIndexStatements() {
  * @returns {Array<{key: string, value: string}>} Initial state key-value pairs
  */
 function getInitialState() {
-    return INITIAL_STATE;
+  return INITIAL_STATE;
 }
 
 module.exports = {
-    SCHEMA,
-    INITIAL_STATE,
-    getTableStatements,
-    getIndexStatements,
-    getInitialState
+  SCHEMA,
+  INITIAL_STATE,
+  getTableStatements,
+  getIndexStatements,
+  getInitialState
 };
